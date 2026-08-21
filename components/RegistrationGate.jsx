@@ -65,7 +65,7 @@ export default function RegistrationGate({ children }) {
     try {
       await register(form);
     } catch (err) {
-      setError('Qeydiyyat zamanı xəta baş verdi. Yenidən cəhd edin.');
+      setError(`Xəta: ${err.message || 'naməlum'} ${err.code ? `(${err.code})` : ''}`);
     } finally {
       setSubmitting(false);
     }
