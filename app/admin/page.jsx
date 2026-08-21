@@ -1,41 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ref, onValue, update } from 'firebase/database';
-import { db } from '@/lib/firebase';
-import { verifyAdminPin, setAdminSession, hasAdminSession, clearAdminSession } from '@/lib/adminAuth';
+import { useEffect, useState, useCallback } from 'react';
+import { verifyAdminPinBrowser } from '@/lib/adminPinHash';
 
-const DAY = 24 * 60 * 60 * 1000;
-const PLAN_DURATIONS = { monthly: 30 * DAY, yearly: 365 * DAY };
+const SESSION_KEY = 'tender_admin_session';
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [registrations, setRegistrations] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (hasAdminSession()) setAuthed(true);
+    if (sessionStorage.getItem(SESSION_KEY)) setAuthed(true);
   }, []);
 
-  useEffect(() => {
-    if (!authed) return;
-    const regsRef = ref(db, 'registrations/tender');
-    const unsub = onValue(regsRef, (snap) => {
-      const val = snap.val() || {};
-      const list = Object.entries(val)
-        .map(([id, data]) => ({ id, ...data }))
-        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      setRegistrations(list);
+  const storedPin = useCallback(() => sessionStorage.getItem(SESSION_KEY) || '', []);
+
+  const fetchRegistrations = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/admin/registrations', {
+      headers: { 'x-admin-pin': storedPin() },
     });
-    return () => unsub();
-  }, [authed]);
+    if (res.status === 401) {
+      setAuthed(false);
+      sessionStorage.removeItem(SESSION_KEY);
+      setLoading(false);
+      return;
+    }
+    const data = await res.json();
+    setRegistrations(data.registrations || []);
+    setLoading(false);
+  }, [storedPin]);
+
+  useEffect(() => {
+    if (authed) fetchRegistrations();
+  }, [authed, fetchRegistrations]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
-    const ok = await verifyAdminPin(pin);
+    const ok = await verifyAdminPinBrowser(pin);
     if (ok) {
-      setAdminSession();
+      sessionStorage.setItem(SESSION_KEY, pin);
       setAuthed(true);
       setPinError('');
     } else {
@@ -44,29 +51,13 @@ export default function AdminPage() {
     }
   };
 
-  const approve = async (reg) => {
-    const duration = PLAN_DURATIONS[reg.plan] || PLAN_DURATIONS.monthly;
-    await update(ref(db, `registrations/tender/${reg.id}`), {
-      status: 'active',
-      approvedAt: Date.now(),
-      expiresAt: Date.now() + duration,
+  const performAction = async (action, id) => {
+    const res = await fetch('/api/admin/registrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': storedPin() },
+      body: JSON.stringify({ action, id }),
     });
-  };
-
-  const reject = async (reg) => {
-    await update(ref(db, `registrations/tender/${reg.id}`), {
-      status: 'rejected',
-      rejectedAt: Date.now(),
-    });
-  };
-
-  const extend = async (reg) => {
-    const duration = PLAN_DURATIONS[reg.plan] || PLAN_DURATIONS.monthly;
-    const base = reg.expiresAt && reg.expiresAt > Date.now() ? reg.expiresAt : Date.now();
-    await update(ref(db, `registrations/tender/${reg.id}`), {
-      status: 'active',
-      expiresAt: base + duration,
-    });
+    if (res.ok) fetchRegistrations();
   };
 
   if (!authed) {
@@ -98,43 +89,45 @@ export default function AdminPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold">Qeydiyyatlar</h1>
           <button
-            onClick={() => { clearAdminSession(); setAuthed(false); }}
+            onClick={() => { sessionStorage.removeItem(SESSION_KEY); setAuthed(false); }}
             className="text-sm text-neutral-400 hover:text-neutral-200"
           >
             Çıxış
           </button>
         </div>
 
+        {loading && <p className="text-sm text-neutral-500">Yüklənir...</p>}
+
         <div className="space-y-3">
-          {registrations.length === 0 && (
+          {!loading && registrations.length === 0 && (
             <p className="text-sm text-neutral-500">Qeydiyyat yoxdur.</p>
           )}
           {registrations.map((reg) => (
             <div key={reg.id} className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-medium">{reg.companyName}</p>
+                  <p className="font-medium">{reg.company_name}</p>
                   <p className="text-sm text-neutral-400">{reg.phone} · {reg.plan === 'yearly' ? 'İllik' : 'Aylıq'}</p>
                   <p className="mt-1 text-xs text-neutral-500">
                     Status: <StatusBadge status={reg.status} />
-                    {reg.expiresAt && (
-                      <span className="ml-2">Bitmə: {new Date(reg.expiresAt).toLocaleDateString('az-AZ')}</span>
+                    {reg.expires_at && (
+                      <span className="ml-2">Bitmə: {new Date(reg.expires_at).toLocaleDateString('az-AZ')}</span>
                     )}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   {reg.status === 'pending' && (
                     <>
-                      <button onClick={() => approve(reg)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">
+                      <button onClick={() => performAction('approve', reg.id)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">
                         Təsdiqlə
                       </button>
-                      <button onClick={() => reject(reg)} className="rounded-lg bg-red-600/80 px-3 py-1.5 text-xs font-medium text-white">
+                      <button onClick={() => performAction('reject', reg.id)} className="rounded-lg bg-red-600/80 px-3 py-1.5 text-xs font-medium text-white">
                         Rədd et
                       </button>
                     </>
                   )}
                   {(reg.status === 'active' || reg.status === 'expired') && (
-                    <button onClick={() => extend(reg)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
+                    <button onClick={() => performAction('extend', reg.id)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
                       Uzat
                     </button>
                   )}
