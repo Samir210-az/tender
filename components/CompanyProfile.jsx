@@ -23,6 +23,7 @@ export default function CompanyProfile() {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectForm, setProjectForm] = useState({ project_name: '', client_name: '', contract_value: '', start_date: '', end_date: '', description: '' });
   const [uploadCategory, setUploadCategory] = useState('legal');
+  const [uploadExpiry, setUploadExpiry] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -110,6 +111,7 @@ export default function CompanyProfile() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('category', uploadCategory);
+      if (uploadExpiry) formData.append('expiry_date', uploadExpiry);
       try {
         const res = await fetch('/api/company/documents', {
           method: 'POST',
@@ -123,6 +125,7 @@ export default function CompanyProfile() {
       }
     }
     setUploading(false);
+    setUploadExpiry('');
     if (fileInputRef.current) fileInputRef.current.value = '';
     fetchAll();
   };
@@ -143,6 +146,8 @@ export default function CompanyProfile() {
         <h1 className="mt-3 mb-6 text-2xl font-semibold">Şirkət profili</h1>
 
         {error && <p className="mb-4 whitespace-pre-line text-sm text-red-400">{error}</p>}
+
+        <ExpiryAlertSummary documents={documents} />
 
         <section className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
           <h2 className="mb-4 text-lg font-medium">Əsas məlumatlar</h2>
@@ -243,6 +248,12 @@ export default function CompanyProfile() {
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
+            {(uploadCategory === 'certificate' || uploadCategory === 'license') && (
+              <div className="mb-3">
+                <label className="mb-1 block text-xs text-neutral-400">Bitmə tarixi (opsional)</label>
+                <input type="date" className="input" value={uploadExpiry} onChange={(e) => setUploadExpiry(e.target.value)} />
+              </div>
+            )}
             <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" id="company-file-upload" />
             <label htmlFor="company-file-upload" className="block cursor-pointer rounded-lg bg-emerald-600 py-2.5 text-center text-sm font-medium text-white">
               {uploading ? 'Yüklənir...' : 'Sənəd yüklə'}
@@ -256,6 +267,7 @@ export default function CompanyProfile() {
                 <div>
                   <p className="text-sm font-medium">{doc.file_name}</p>
                   <p className="text-xs text-neutral-500">{DOC_CATEGORY_LABELS[doc.category]}</p>
+                  {doc.expiry_date && <ExpiryBadge expiryDate={doc.expiry_date} />}
                 </div>
                 <button onClick={() => handleDeleteDocument(doc.id)} className="text-xs text-red-400">Sil</button>
               </div>
@@ -265,6 +277,53 @@ export default function CompanyProfile() {
       </div>
     </main>
   );
+}
+
+function ExpiryAlertSummary({ documents }) {
+  const now = Date.now();
+  const withExpiry = documents.filter((d) => d.expiry_date);
+  const expired = withExpiry.filter((d) => new Date(d.expiry_date).getTime() < now);
+  const expiringSoon = withExpiry.filter((d) => {
+    const days = (new Date(d.expiry_date).getTime() - now) / (1000 * 60 * 60 * 24);
+    return days >= 0 && days <= 30;
+  });
+
+  if (expired.length === 0 && expiringSoon.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+      {expired.length > 0 && (
+        <p className="text-sm text-red-400">
+          ⚠ {expired.length} sənədin (sertifikat/lisenziya) müddəti bitib: {expired.map((d) => d.file_name).join(', ')}
+        </p>
+      )}
+      {expiringSoon.length > 0 && (
+        <p className="mt-1 text-sm text-amber-400">
+          30 gün ərzində bitəcək: {expiringSoon.map((d) => d.file_name).join(', ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ExpiryBadge({ expiryDate }) {
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+  let label, cls;
+  if (daysLeft < 0) {
+    label = 'Müddəti bitib';
+    cls = 'text-red-400';
+  } else if (daysLeft <= 30) {
+    label = `${daysLeft} gün qalıb`;
+    cls = 'text-amber-400';
+  } else {
+    label = `Bitmə: ${expiry.toLocaleDateString('az-AZ')}`;
+    cls = 'text-neutral-500';
+  }
+
+  return <p className={`text-xs ${cls}`}>{label}</p>;
 }
 
 function Field({ label, children }) {

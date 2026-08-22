@@ -167,11 +167,7 @@ export default function Dashboard() {
                         {t.readiness_score}% hazır
                       </p>
                     )}
-                    {t.deadline && (
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {new Date(t.deadline).toLocaleDateString('az-AZ')}
-                      </p>
-                    )}
+                    {t.deadline && <DeadlineBadge deadline={t.deadline} />}
                   </div>
 
                   {confirmDeleteId === t.id ? (
@@ -207,6 +203,16 @@ export default function Dashboard() {
       </div>
     </main>
   );
+}
+
+function DeadlineBadge({ deadline }) {
+  const daysLeft = Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const dateLabel = new Date(deadline).toLocaleDateString('az-AZ');
+
+  if (daysLeft < 0) return <p className="mt-1 text-xs font-medium text-red-400">Bitib</p>;
+  if (daysLeft <= 3) return <p className="mt-1 text-xs font-medium text-red-400">{daysLeft} gün qalıb ⚠</p>;
+  if (daysLeft <= 7) return <p className="mt-1 text-xs font-medium text-amber-400">{daysLeft} gün qalıb</p>;
+  return <p className="mt-1 text-xs text-neutral-500">{dateLabel}</p>;
 }
 
 function scoreColorClass(score) {

@@ -60,3 +60,7 @@ npm run dev
 - Next.js (App Router)
 - Supabase Postgres — qeydiyyat/abunə/admin + tender/company data (Faza 2)
 - Tailwind CSS
+
+**Deadline Engine + Document Expiry Engine** (tamamlandı)
+- Tender son tarixi üçün real-time geri sayım (gün/saat), 3 gündən az qalanda qırmızı xəbərdarlıq
+- Şirkət sertifikat/lisenziya sənədləri üçün bitmə tarixi izlənməsi — `/company`-nin yuxarısında ümumi xəbərdarlıq (bitib / 30 gün ərzində bitəcək)

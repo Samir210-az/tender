@@ -166,11 +166,7 @@ export default function TenderDetail({ tenderId }) {
         <div className="mt-3 mb-6">
           <h1 className="text-2xl font-semibold">{tender.name}</h1>
           {tender.organization && <p className="text-sm text-neutral-400">{tender.organization}</p>}
-          {tender.deadline && (
-            <p className="mt-1 text-sm text-amber-400">
-              Son tarix: {new Date(tender.deadline).toLocaleDateString('az-AZ')}
-            </p>
-          )}
+          {tender.deadline && <DeadlineCountdown deadline={tender.deadline} />}
           {typeof tender.readiness_score === 'number' && (
             <ReadinessScoreCard score={tender.readiness_score} breakdown={tender.readiness_breakdown} />
           )}
@@ -347,6 +343,38 @@ export default function TenderDetail({ tenderId }) {
         )}
       </div>
     </main>
+  );
+}
+
+function DeadlineCountdown({ deadline }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000); // hər dəqiqə yenilə
+    return () => clearInterval(interval);
+  }, []);
+
+  const target = new Date(deadline).getTime();
+  const diffMs = target - now;
+  const dateLabel = new Date(deadline).toLocaleDateString('az-AZ');
+
+  if (diffMs <= 0) {
+    return (
+      <p className="mt-1 text-sm font-medium text-red-400">
+        ⚠ Son tarix keçib ({dateLabel})
+      </p>
+    );
+  }
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const isCritical = days < 3;
+
+  return (
+    <p className={`mt-1 text-sm font-medium ${isCritical ? 'text-red-400' : 'text-amber-400'}`}>
+      {isCritical && '⚠ '}
+      Son tarix: {dateLabel} · {days} gün {hours} saat qalıb
+    </p>
   );
 }
 

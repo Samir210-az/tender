@@ -55,6 +55,7 @@ export async function POST(request) {
   const formData = await request.formData();
   const file = formData.get('file');
   const category = formData.get('category') || 'other';
+  const expiryDate = formData.get('expiry_date') || null;
 
   if (!file) return NextResponse.json({ error: 'Fayl göndərilməyib' }, { status: 400 });
   if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'Fayl 50MB-dan böyükdür' }, { status: 400 });
@@ -80,8 +81,9 @@ export async function POST(request) {
       file_size: file.size,
       mime_type: file.type,
       category,
+      expiry_date: expiryDate || null,
     })
-    .select('id, file_name, file_size, mime_type, category, created_at')
+    .select('id, file_name, file_size, mime_type, category, expiry_date, created_at')
     .single();
 
   if (dbError) {
