@@ -11,6 +11,8 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', organization: '', deadline: '' });
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [error, setError] = useState('');
 
   const fetchTenders = useCallback(async () => {
@@ -49,6 +51,24 @@ export default function Dashboard() {
       setError(err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDelete = async (tenderId) => {
+    setDeletingId(tenderId);
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}`, {
+        method: 'DELETE',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Silinmə xətası');
+      setConfirmDeleteId(null);
+      fetchTenders();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -102,32 +122,60 @@ export default function Dashboard() {
         )}
 
         {loading && <p className="text-sm text-neutral-500">Yüklənir...</p>}
+        {error && !showCreate && <p className="mb-3 text-sm text-red-400">{error}</p>}
 
         <div className="space-y-3">
           {!loading && tenders.length === 0 && (
             <p className="text-sm text-neutral-500">Hələ tender yoxdur. "+ Yeni tender" ilə başla.</p>
           )}
           {tenders.map((t) => (
-            <Link
+            <div
               key={t.id}
-              href={`/tenders/${t.id}`}
-              className="block rounded-xl border border-neutral-800 bg-neutral-900 p-4 hover:border-neutral-700"
+              className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 hover:border-neutral-700"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  {t.organization && <p className="text-sm text-neutral-400">{t.organization}</p>}
-                </div>
-                <div className="text-right">
-                  <StatusBadge status={t.status} />
-                  {t.deadline && (
-                    <p className="mt-1 text-xs text-neutral-500">
-                      {new Date(t.deadline).toLocaleDateString('az-AZ')}
-                    </p>
+              <div className="flex items-center justify-between gap-3">
+                <Link href={`/tenders/${t.id}`} className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{t.name}</p>
+                  {t.organization && <p className="truncate text-sm text-neutral-400">{t.organization}</p>}
+                </Link>
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right">
+                    <StatusBadge status={t.status} />
+                    {t.deadline && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {new Date(t.deadline).toLocaleDateString('az-AZ')}
+                      </p>
+                    )}
+                  </div>
+
+                  {confirmDeleteId === t.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleDelete(t.id)}
+                        disabled={deletingId === t.id}
+                        className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                      >
+                        {deletingId === t.id ? '...' : 'Təsdiq'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="rounded-lg bg-neutral-700 px-2.5 py-1.5 text-xs font-medium text-white"
+                      >
+                        Ləğv
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(t.id)}
+                      className="rounded-lg p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400"
+                      title="Tender-i sil"
+                    >
+                      <TrashIcon />
+                    </button>
                   )}
                 </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
@@ -145,4 +193,13 @@ function StatusBadge({ status }) {
   };
   const [label, cls] = map[status] || [status, 'text-neutral-400'];
   return <span className={`text-xs font-medium ${cls}`}>{label}</span>;
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
 }
