@@ -80,3 +80,9 @@ npm run dev
 - Ünvanlayıcı bloku (yuxarıda): təqdim tarixi, tender/müsabiqə nömrəsi (`tenders.tender_number` — tender detail səhifəsində redaktə edilə bilər, sənəd analizindən avtomatik təxmin edilir), "Kimə" (`tenders.organization`)
 - İmza bloku (aşağıda): təchizatçı adı + VÖEN (`company_profiles`-dən), imzalayan şəxsin adı/vəzifəsi (`company_profiles.authorized_rep_name/position` — `/company`-də redaktə edilir), imza xətti, tarix
 - Hər iki blok mövcud sahələrdən avtomatik doldurulur, istənilən vaxt `/company` və ya tender detail səhifəsindən düzəliş edilə bilər — yenidən "Hazırla" edəndə yeni dəyərlərlə generasiya olunur
+
+**Düzəlişlər (bu tur):**
+- FORMA 1: boş sahələr (organization, imzalayan şəxs) real sənəddə artıq açıqlayıcı mətn deyil, təmiz boş xətt kimi görünür; UI-da generasiyadan sonra hansı sahələrin doldurulmalı olduğu xəbərdarlıq kimi göstərilir
+- Verification Engine v2: strukturlaşdırılmış yoxlama — hər "missing/non_compliant" tələb ayrıca tək-tək yoxlanılır (açıq axtarış əvəzinə)
+- Proposal generation temperature 0.5 → 0.3 (üslub müxtəlifliyi ilə fakt təhlükəsizliyi arasında balans, dəqiqlik prioritetdir)
+- Sertifikat/standart uydurma qadağası konkret nümunə ilə gücləndirildi (ISO 27001 halı)

@@ -15,7 +15,7 @@ import {
   buildVerificationUserPrompt,
   VERIFICATION_PROMPT_VERSION,
 } from '@/lib/prompts/finalVerification';
-import { buildAddresseeLines, buildSignatureLines } from '@/lib/letterhead';
+import { buildAddresseeLines, buildSignatureLines, checkLetterheadCompleteness } from '@/lib/letterhead';
 
 export const maxDuration = 120;
 
@@ -95,7 +95,11 @@ export async function POST(request, { params }) {
       standardIntro: profile.standard_intro,
       standardConclusion: profile.standard_conclusion,
     });
-    aiResult = await completeJSON(systemPrompt, userPrompt, { temperature: 0.5 });
+    // Yaradıcı yazı üçün mötədil temperature (0.3) — hər generasiyada bir qədər
+    // fərqli ifadə tərzi olsun deyə, amma 0.5 real risk yaratdı: ISO 27001
+    // kimi olmayan sertifikatları "uydurma" ehtimalı artırdı (Verification
+    // Engine bunu bir neçə dəfə tutdu). Dəqiqlik > üslub müxtəlifliyi.
+    aiResult = await completeJSON(systemPrompt, userPrompt, { temperature: 0.3 });
   } catch (err) {
     return NextResponse.json({ error: `Mətn generasiyası xətası: ${err.message}` }, { status: 500 });
   }
@@ -117,6 +121,9 @@ export async function POST(request, { params }) {
       tenderName: tender.name,
       sections,
       companyContext,
+      unresolvedRequirements: requirements.filter((r) =>
+        ['missing', 'non_compliant', 'partially_compliant'].includes(r.status)
+      ),
     });
     const verifyResult = await completeJSON(VERIFICATION_SYSTEM_PROMPT, verifyUserPrompt, { temperature: 0.1 });
     verificationIssues = verifyResult.issues || [];
@@ -216,6 +223,7 @@ export async function POST(request, { params }) {
     document: docRow,
     promptVersion: PROPOSAL_PROMPT_VERSION,
     verificationPromptVersion: VERIFICATION_PROMPT_VERSION,
+    letterheadWarnings: checkLetterheadCompleteness({ tender, profile }),
   });
 }
 

@@ -41,6 +41,7 @@ export default function TenderDetail({ tenderId }) {
   const [checkingCompliance, setCheckingCompliance] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [letterheadWarnings, setLetterheadWarnings] = useState([]);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
@@ -136,6 +137,7 @@ export default function TenderDetail({ tenderId }) {
   const handleGenerate = async () => {
     setGenerating(true);
     setError('');
+    setLetterheadWarnings([]);
     try {
       const res = await fetch(`/api/tenders/${tenderId}/generate`, {
         method: 'POST',
@@ -143,6 +145,7 @@ export default function TenderDetail({ tenderId }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Sənəd hazırlanmadı');
+      if (data.letterheadWarnings?.length) setLetterheadWarnings(data.letterheadWarnings);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -320,6 +323,22 @@ export default function TenderDetail({ tenderId }) {
             <p className="mb-3 text-xs text-neutral-500">
               Şirkət profili və uyğunluq nəticələri əsasında Texniki Təklif sənədi hazırlanır (DOCX + PDF), sonra ikinci AI keçidi ilə yoxlanılır.
             </p>
+
+            {letterheadWarnings.length > 0 && (
+              <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <p className="text-xs font-medium text-amber-400">
+                  ⚠ Sənəddə boş qalan sahələr (əl ilə doldurulmalıdır):
+                </p>
+                <ul className="mt-1 space-y-0.5">
+                  {letterheadWarnings.map((w, i) => (
+                    <li key={i} className="text-xs text-neutral-400">• {w}</li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs">
+                  <a href="/company" className="underline text-amber-400">Şirkət profilini tamamla</a> və yenidən hazırla.
+                </p>
+              </div>
+            )}
 
             {generatedDocs.length > 0 && (
               <div className="space-y-2">
