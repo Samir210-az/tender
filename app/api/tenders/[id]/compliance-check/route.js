@@ -70,7 +70,7 @@ export async function POST(request, { params }) {
       }
     }
   } catch (err) {
-    return NextResponse.json({ error: `Compliance analiz xətası: ${err.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Uyğunluq analizi xətası: ${err.message}` }, { status: 500 });
   }
 
   // Nəticələri DB-yə yaz

@@ -124,7 +124,7 @@ export default function TenderDetail({ tenderId }) {
         headers: { 'x-registration-id': regId },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Compliance yoxlaması uğursuz oldu');
+      if (!res.ok) throw new Error(data.error || 'Uyğunluq yoxlaması uğursuz oldu');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -243,7 +243,7 @@ export default function TenderDetail({ tenderId }) {
                 disabled={checkingCompliance}
                 className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
               >
-                {checkingCompliance ? 'Yoxlanılır...' : 'Compliance yoxla'}
+                {checkingCompliance ? 'Yoxlanılır...' : 'Uyğunluğu yoxla'}
               </button>
             </div>
             <p className="mb-3 text-xs text-neutral-500">
@@ -466,7 +466,7 @@ function ReadinessScoreCard({ score, breakdown }) {
         </div>
       )}
       <p className="mt-3 text-[11px] text-neutral-600">
-        Düstur: hər kateqoriyada məcburi tələblərin neçə faizi uyğundur (compliance yoxlamasına əsaslanır).
+        Düstur: hər kateqoriyada məcburi tələblərin neçə faizi uyğundur (uyğunluq yoxlamasına əsaslanır).
       </p>
     </div>
   );
