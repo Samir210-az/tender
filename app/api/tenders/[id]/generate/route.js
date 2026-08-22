@@ -109,6 +109,7 @@ export async function POST(request, { params }) {
   // 2. Final Verification — ikinci AI keçidi, mətni COMPANY DATA ilə tutuşdurur
   let verificationStatus = 'not_verified';
   let verificationIssues = null;
+  let verificationError = null;
   try {
     await new Promise((r) => setTimeout(r, 2200)); // Groq RPM limitinə hörmət
     const verifyUserPrompt = buildVerificationUserPrompt({
@@ -122,8 +123,9 @@ export async function POST(request, { params }) {
     verificationStatus = verificationIssues.length === 0 ? 'passed' : 'issues_found';
     if (hasCritical) verificationStatus = 'issues_found';
   } catch (err) {
-    // Verification uğursuz olsa belə, sənəd hazırdır — sadəcə "not_verified" qalır
-    console.warn(`Final verification xətası (docId hələ yaranmayıb): ${err.message}`);
+    // Verification uğursuz olsa belə, sənəd hazırdır — sadəcə "not_verified" qalır,
+    // amma səbəbi UI-da görünən edirik (əvvəllər səssiz console.warn idi).
+    verificationError = err.message;
   }
 
   // 3. DOCX qurulması
@@ -193,6 +195,7 @@ export async function POST(request, { params }) {
       ai_model: 'openai/gpt-oss-120b',
       verification_status: verificationStatus,
       verification_issues: verificationIssues,
+      verification_error: verificationError,
       verified_at: verificationStatus !== 'not_verified' ? new Date().toISOString() : null,
     })
     .select('*')

@@ -330,7 +330,7 @@ export default function TenderDetail({ tenderId }) {
                         <p className="text-xs text-neutral-500">
                           {new Date(doc.created_at).toLocaleString('az-AZ')}
                         </p>
-                        <VerificationBadge status={doc.verification_status} issues={doc.verification_issues} />
+                        <VerificationBadge status={doc.verification_status} issues={doc.verification_issues} error={doc.verification_error} />
                       </div>
                       <div className="flex shrink-0 gap-1.5">
                         {doc.download_url && (
@@ -375,7 +375,10 @@ export default function TenderDetail({ tenderId }) {
   );
 }
 
-function VerificationBadge({ status, issues }) {
+function VerificationBadge({ status, issues, error }) {
+  if (error) {
+    return <p className="mt-0.5 text-[11px] text-red-400">Verification xətası: {error}</p>;
+  }
   if (!status || status === 'not_verified') {
     return <p className="mt-0.5 text-[11px] text-neutral-500">Yoxlanılmayıb</p>;
   }
