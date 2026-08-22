@@ -157,6 +157,7 @@ export async function POST(request, { params }) {
   // 4. PDF qurulması
   let pdfPath = null;
   let pdfFileName = null;
+  let pdfGenerationError = null;
   try {
     const pdfBuffer = await generateProposalPdf({
       tenderName: tender.name,
@@ -168,12 +169,12 @@ export async function POST(request, { params }) {
       .from('generated-documents')
       .upload(pdfPath, pdfBuffer, { contentType: 'application/pdf' });
     if (pdfUploadErr) {
-      console.warn(`PDF Storage xətası: ${pdfUploadErr.message}`);
+      pdfGenerationError = `Storage: ${pdfUploadErr.message}`;
       pdfPath = null;
       pdfFileName = null;
     }
   } catch (err) {
-    console.warn(`PDF generasiya xətası: ${err.message}`);
+    pdfGenerationError = `${err.message}${err.stack ? ' | ' + err.stack.split('\n').slice(0, 3).join(' > ') : ''}`;
   }
 
   // 5. DB-yə yaz
@@ -187,6 +188,7 @@ export async function POST(request, { params }) {
       file_name: docxFileName,
       file_path_pdf: pdfPath,
       file_name_pdf: pdfFileName,
+      pdf_generation_error: pdfGenerationError,
       ai_provider: 'groq',
       ai_model: 'openai/gpt-oss-120b',
       verification_status: verificationStatus,

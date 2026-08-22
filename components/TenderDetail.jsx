@@ -346,6 +346,10 @@ export default function TenderDetail({ tenderId }) {
                       </div>
                     </div>
 
+                    {doc.pdf_generation_error && (
+                      <p className="mt-1 text-[11px] text-red-400">PDF xətası: {doc.pdf_generation_error}</p>
+                    )}
+
                     {doc.verification_issues && doc.verification_issues.length > 0 && (
                       <div className="mt-2 space-y-1 border-t border-purple-500/20 pt-2">
                         {doc.verification_issues.map((issue, i) => (
