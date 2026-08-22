@@ -75,19 +75,24 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-neutral-950 p-6 text-neutral-100">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Tenderlər</h1>
             {subscription?.company_name && (
               <p className="text-sm text-neutral-500">{subscription.company_name}</p>
             )}
           </div>
-          <button
-            onClick={() => setShowCreate((s) => !s)}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-          >
-            + Yeni tender
-          </button>
+          <div className="flex items-center gap-2">
+            <Link href="/company" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:border-neutral-600">
+              Şirkət profili
+            </Link>
+            <button
+              onClick={() => setShowCreate((s) => !s)}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              + Yeni tender
+            </button>
+          </div>
         </div>
 
         {showCreate && (

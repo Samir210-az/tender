@@ -37,6 +37,7 @@ export default function TenderDetail({ tenderId }) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState({});
+  const [checkingCompliance, setCheckingCompliance] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
@@ -104,6 +105,24 @@ export default function TenderDetail({ tenderId }) {
       setError(err.message);
     } finally {
       setAnalyzing((a) => ({ ...a, [docId]: false }));
+      fetchData();
+    }
+  };
+
+  const handleComplianceCheck = async () => {
+    setCheckingCompliance(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/compliance-check`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Compliance yoxlaması uğursuz oldu');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCheckingCompliance(false);
       fetchData();
     }
   };
@@ -187,13 +206,26 @@ export default function TenderDetail({ tenderId }) {
 
         {requirements.length > 0 && (
           <div className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold">Tələblər ({requirements.length})</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Tələblər ({requirements.length})</h2>
+              <button
+                onClick={handleComplianceCheck}
+                disabled={checkingCompliance}
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              >
+                {checkingCompliance ? 'Yoxlanılır...' : 'Compliance yoxla'}
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-neutral-500">
+              Şirkət profili (VÖEN, dövriyyə və s.) tender tələbləri ilə müqayisə olunur.{' '}
+              <a href="/company" className="underline">Profili redaktə et</a>
+            </p>
             <div className="space-y-2">
               {requirements.map((req) => (
                 <div key={req.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-medium text-neutral-500">
                           {REQ_CATEGORY_LABELS[req.category] || req.category || '—'}
                         </span>
@@ -203,6 +235,7 @@ export default function TenderDetail({ tenderId }) {
                           </span>
                         )}
                         <ConfidenceBadge confidence={req.confidence} />
+                        {req.status && <ComplianceBadge status={req.status} />}
                       </div>
                       <p className="mt-1 font-medium">{req.title}</p>
                       {req.description && (
@@ -217,6 +250,11 @@ export default function TenderDetail({ tenderId }) {
                       {(req.deadline || req.deadline_raw) && (
                         <p className="mt-1 text-xs text-amber-400">
                           Son tarix: {req.deadline ? new Date(req.deadline).toLocaleString('az-AZ') : req.deadline_raw}
+                        </p>
+                      )}
+                      {req.compliance_reasoning && (
+                        <p className="mt-2 rounded bg-neutral-800/50 p-2 text-xs text-neutral-400">
+                          {req.compliance_reasoning}
                         </p>
                       )}
                     </div>
@@ -251,6 +289,20 @@ function ConfidenceBadge({ confidence }) {
   const [label, cls] = map[confidence] || [null, ''];
   if (!label) return null;
   return <span className={`text-[10px] ${cls}`}>{label}</span>;
+}
+
+function ComplianceBadge({ status }) {
+  const map = {
+    needs_review: ['Yoxlanılmalıdır', 'bg-neutral-700 text-neutral-300'],
+    compliant: ['✓ Uyğundur', 'bg-emerald-500/15 text-emerald-400'],
+    partially_compliant: ['~ Qismən uyğun', 'bg-amber-500/15 text-amber-400'],
+    non_compliant: ['✗ Uyğun deyil', 'bg-red-500/15 text-red-400'],
+    missing: ['Məlumat yoxdur', 'bg-neutral-700 text-neutral-400'],
+    not_applicable: ['Aidiyyatı yoxdur', 'bg-neutral-800 text-neutral-500'],
+  };
+  const [label, cls] = map[status] || [null, ''];
+  if (!label) return null;
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${cls}`}>{label}</span>;
 }
 
 function formatSize(bytes) {
