@@ -33,6 +33,13 @@ Tender sənədlərinin AI ilə analizi, şirkət məlumat bazası ilə uyğunluq
 - "NO FAKE COMPLIANCE" prinsipi: evidence yoxdursa status "missing", AI özü qərar vermir — "needs_review" ilə insan yoxlamasına yönləndirir
 - Statuslar: compliant / partially_compliant / non_compliant / missing / not_applicable / needs_review
 
+**Faza 5 — Proposal Generator** (tamamlandı)
+- "Hazırla" düyməsi (compliance yoxlaması bitdikdən sonra aktiv olur) — real DOCX sənəd yaradır (Örtük Məktubu, Şirkət Təqdimatı, Uyğunluq Bəyanatı, Nəticə)
+- Şirkət yazı üslubu seçimi (rəsmi/texniki/qısa) — `/company`-də
+- AI YALNIZ şirkət datasından istifadə edir — olmayan nailiyyət/sertifikat/rəqəm uydurmur, çatışmayan tələblər üçün neytral, doğru ifadə işlədir
+- Hər generasiya olunan sənəddə **məcburi xəbərdarlıq**: "AI tərəfindən yaradılıb — təqdim etməzdən əvvəl mütləq yoxlayın və təsdiqləyin"
+- Signed URL ilə təhlükəsiz endirmə (1 saat etibarlı)
+
 **Faza 4 — Company Knowledge Base + Compliance Matrix** (tamamlandı)
 - `/company` — şirkət profili (VÖEN, dövriyyə, işçi sayı və s.) + sənədlər (sertifikat/lisenziya/hüquqi, bitmə tarixi izlənməsi ilə)
 - "Compliance yoxla" — hər tender tələbini şirkət profili ilə müqayisə edir, YALNIZ real doldurulmuş sahələrdən istifadə edir (uydurmur)

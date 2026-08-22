@@ -38,18 +38,22 @@ export default function TenderDetail({ tenderId }) {
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState({});
   const [checkingCompliance, setCheckingCompliance] = useState(false);
+  const [generatedDocs, setGeneratedDocs] = useState([]);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     if (!regId || !tenderId) return;
     const headers = { 'x-registration-id': regId };
-    const [tenderRes, reqRes] = await Promise.all([
+    const [tenderRes, reqRes, genRes] = await Promise.all([
       fetch(`/api/tenders/${tenderId}`, { headers }),
       fetch(`/api/tenders/${tenderId}/requirements`, { headers }),
+      fetch(`/api/tenders/${tenderId}/documents-generated`, { headers }),
     ]);
     const tenderData = await tenderRes.json();
     const reqData = await reqRes.json();
+    const genData = await genRes.json();
     if (tenderRes.ok) {
       setTender(tenderData.tender);
       setDocuments(tenderData.documents || []);
@@ -57,6 +61,7 @@ export default function TenderDetail({ tenderId }) {
       setError(tenderData.error || 'Xəta baş verdi');
     }
     if (reqRes.ok) setRequirements(reqData.requirements || []);
+    if (genRes.ok) setGeneratedDocs(genData.documents || []);
     setLoading(false);
   }, [regId, tenderId]);
 
@@ -123,6 +128,24 @@ export default function TenderDetail({ tenderId }) {
       setError(err.message);
     } finally {
       setCheckingCompliance(false);
+      fetchData();
+    }
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/generate`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sənəd hazırlanmadı');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
       fetchData();
     }
   };
@@ -271,6 +294,52 @@ export default function TenderDetail({ tenderId }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {requirements.some((r) => r.compliance_checked_at) && (
+          <div className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Sənəd hazırla</h2>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              >
+                {generating ? 'Hazırlanır...' : 'Hazırla'}
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-neutral-500">
+              Şirkət profili və compliance nəticələri əsasında Texniki Təklif sənədi hazırlanır (DOCX).
+            </p>
+
+            {generatedDocs.length > 0 && (
+              <div className="space-y-2">
+                {generatedDocs.map((doc) => (
+                  <div key={doc.id} className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{doc.file_name}</p>
+                        <p className="text-xs text-neutral-500">
+                          {new Date(doc.created_at).toLocaleString('az-AZ')}
+                        </p>
+                      </div>
+                      {doc.download_url && (
+                        <a
+                          href={doc.download_url}
+                          className="shrink-0 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white"
+                        >
+                          Endir
+                        </a>
+                      )}
+                    </div>
+                    <p className="mt-2 text-[11px] text-amber-400">
+                      ⚠ AI tərəfindən yaradılıb — təqdim etməzdən əvvəl mütləq yoxlayın və təsdiqləyin.
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

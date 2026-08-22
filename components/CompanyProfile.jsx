@@ -181,6 +181,13 @@ export default function CompanyProfile() {
                 <input className="input" placeholder="2024" value={profile.turnover_year2_label || ''} onChange={(e) => handleProfileChange('turnover_year2_label', e.target.value)} />
               </Field>
             </div>
+            <Field label="Sənəd yazı üslubu (AI-nin hazırladığı sənədlər üçün)">
+              <select className="input" value={profile.writing_tone || 'formal'} onChange={(e) => handleProfileChange('writing_tone', e.target.value)}>
+                <option value="formal">Rəsmi</option>
+                <option value="technical">Texniki</option>
+                <option value="concise">Qısa</option>
+              </select>
+            </Field>
           </div>
           <button
             onClick={handleSaveProfile}
