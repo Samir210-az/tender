@@ -5,6 +5,7 @@ import { extractText } from '@/lib/ai/textExtraction';
 import { parseAzDate } from '@/lib/ai/parseDate';
 import { completeJSON, AI_META } from '@/lib/ai/provider';
 import { completeJSONWithFile, GEMINI_META } from '@/lib/ai/gemini';
+import { chunkText } from '@/lib/ai/chunkText';
 import {
   DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
   buildDocumentAnalysisUserPrompt,
@@ -12,7 +13,7 @@ import {
   DOCUMENT_ANALYSIS_PROMPT_VERSION,
 } from '@/lib/prompts/documentAnalysis';
 
-export const maxDuration = 60; // Vercel serverless timeout (Pro plan üçün)
+export const maxDuration = 120; // Çoxhissəli (chunked) analiz üçün — Vercel Pro plan tələb edir
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
 
@@ -88,9 +89,33 @@ export async function POST(request, { params }) {
           .eq('id', docId);
         return NextResponse.json({ error: 'Fayl tipi dəstəklənmir' }, { status: 422 });
       } else {
-        // Normal mətn əsaslı analiz (Groq)
-        const userPrompt = buildDocumentAnalysisUserPrompt(extracted.text, doc.file_name, tender.jurisdiction);
-        result = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+        // Normal mətn əsaslı analiz (Groq) — TPM limitinə görə hissələrə bölünür
+        const MAX_CHARS = 8000;
+        const chunks = chunkText(extracted.text, MAX_CHARS);
+
+        if (chunks.length === 1) {
+          const userPrompt = buildDocumentAnalysisUserPrompt(chunks[0], doc.file_name, tender.jurisdiction);
+          result = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+        } else {
+          // Bir neçə hissə — ardıcıl analiz edib nəticələri birləşdiririk.
+          // Groq-un 30 RPM limitinə hörmət üçün hissələr arası kiçik fasilə.
+          const merged = { document_category: null, language_detected: null, requirements: [] };
+          for (let i = 0; i < chunks.length; i++) {
+            if (i > 0) await new Promise((r) => setTimeout(r, 2200));
+            const userPrompt = buildDocumentAnalysisUserPrompt(chunks[i], doc.file_name, tender.jurisdiction);
+            const chunkResult = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+            if (!merged.document_category && chunkResult.document_category) {
+              merged.document_category = chunkResult.document_category;
+            }
+            if (!merged.language_detected && chunkResult.language_detected) {
+              merged.language_detected = chunkResult.language_detected;
+            }
+            if (Array.isArray(chunkResult.requirements)) {
+              merged.requirements.push(...chunkResult.requirements);
+            }
+          }
+          result = merged;
+        }
         aiMeta = AI_META;
       }
     }
