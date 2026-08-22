@@ -4,13 +4,17 @@ import { requireActiveRegistration } from '@/lib/requireActiveRegistration';
 import { extractText } from '@/lib/ai/textExtraction';
 import { parseAzDate } from '@/lib/ai/parseDate';
 import { completeJSON, AI_META } from '@/lib/ai/provider';
+import { completeJSONWithFile, GEMINI_META } from '@/lib/ai/gemini';
 import {
   DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
   buildDocumentAnalysisUserPrompt,
+  buildFileAnalysisUserPrompt,
   DOCUMENT_ANALYSIS_PROMPT_VERSION,
 } from '@/lib/prompts/documentAnalysis';
 
 export const maxDuration = 60; // Vercel serverless timeout (Pro plan üçün)
+
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
 
 export async function POST(request, { params }) {
   const regId = request.headers.get('x-registration-id');
@@ -51,36 +55,45 @@ export async function POST(request, { params }) {
     if (downloadErr) throw new Error(`Fayl endirilə bilmədi: ${downloadErr.message}`);
 
     const buffer = Buffer.from(await fileBlob.arrayBuffer());
+    const isImage = IMAGE_TYPES.has(doc.mime_type);
 
-    // 2. Mətn çıxar
-    const { text, pageCount, supported } = await extractText(buffer, doc.mime_type, doc.file_name);
+    let result, aiMeta, pageCount = null;
 
-    if (!supported) {
-      await db
-        .from('tender_documents')
-        .update({
-          ocr_status: 'failed',
-          analysis_error: 'Bu fayl tipi hələ dəstəklənmir (yalnız PDF, DOCX, XLS/XLSX, TXT, CSV dəstəklənir)',
-        })
-        .eq('id', docId);
-      return NextResponse.json({ error: 'Fayl tipi dəstəklənmir' }, { status: 422 });
+    if (isImage) {
+      // Şəkil sənədlər həmişə Gemini vision ilə (Groq mətn-yalnızdır, şəkil oxuya bilmir)
+      const base64 = buffer.toString('base64');
+      const userPrompt = buildFileAnalysisUserPrompt(doc.file_name, tender.jurisdiction);
+      result = await completeJSONWithFile(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt, base64, doc.mime_type);
+      aiMeta = GEMINI_META;
+    } else {
+      // 2. Mətn çıxarmağa cəhd et (PDF/DOCX/XLSX/TXT/CSV)
+      const extracted = await extractText(buffer, doc.mime_type, doc.file_name);
+      pageCount = extracted.pageCount;
+
+      const looksScanned = !extracted.supported || !extracted.text || extracted.text.trim().length < 20;
+
+      if (looksScanned && doc.mime_type === 'application/pdf') {
+        // Skan olunmuş PDF ehtimalı — Gemini vision fallback (PDF-i birbaşa göndər)
+        const base64 = buffer.toString('base64');
+        const userPrompt = buildFileAnalysisUserPrompt(doc.file_name, tender.jurisdiction);
+        result = await completeJSONWithFile(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt, base64, 'application/pdf');
+        aiMeta = GEMINI_META;
+      } else if (!extracted.supported) {
+        await db
+          .from('tender_documents')
+          .update({
+            ocr_status: 'failed',
+            analysis_error: 'Bu fayl tipi dəstəklənmir (application/msword köhnə .doc və ZIP hələ dəstəklənmir)',
+          })
+          .eq('id', docId);
+        return NextResponse.json({ error: 'Fayl tipi dəstəklənmir' }, { status: 422 });
+      } else {
+        // Normal mətn əsaslı analiz (Groq)
+        const userPrompt = buildDocumentAnalysisUserPrompt(extracted.text, doc.file_name, tender.jurisdiction);
+        result = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+        aiMeta = AI_META;
+      }
     }
-
-    if (!text || text.trim().length < 20) {
-      await db
-        .from('tender_documents')
-        .update({
-          ocr_status: 'failed',
-          analysis_error: 'Sənəddən mətn çıxarıla bilmədi (bəlkə skan olunmuş şəkildir — OCR hələ dəstəklənmir)',
-        })
-        .eq('id', docId);
-      return NextResponse.json({ error: 'Mətn tapılmadı' }, { status: 422 });
-    }
-
-    // 3. AI analizi
-    const systemPrompt = DOCUMENT_ANALYSIS_SYSTEM_PROMPT;
-    const userPrompt = buildDocumentAnalysisUserPrompt(text, doc.file_name, tender.jurisdiction);
-    const result = await completeJSON(systemPrompt, userPrompt);
 
     if (!result.requirements || !Array.isArray(result.requirements)) {
       throw new Error('AI cavabında requirements array tapılmadı');
@@ -106,8 +119,8 @@ export async function POST(request, { params }) {
           source_excerpt: r.source_excerpt || null,
           source_page: r.source_page || null,
           confidence: r.confidence || 'low',
-          ai_provider: AI_META.provider,
-          ai_model: AI_META.model,
+          ai_provider: aiMeta.provider,
+          ai_model: aiMeta.model,
         };
       });
       const { error: insertErr } = await db.from('tender_requirements').insert(rows);
@@ -132,7 +145,7 @@ export async function POST(request, { params }) {
       requirementsFound: result.requirements.length,
       category: result.document_category,
       promptVersion: DOCUMENT_ANALYSIS_PROMPT_VERSION,
-      aiMeta: AI_META,
+      aiMeta,
     });
   } catch (err) {
     await db

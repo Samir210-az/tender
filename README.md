@@ -18,7 +18,8 @@ Tender sənədlərinin AI ilə analizi, şirkət məlumat bazası ilə uyğunluq
 - Mətn çıxarma: PDF (səhifə markerləri ilə), DOCX, XLSX, TXT/CSV
 - Requirement extraction: kateqoriya, məcburi/opsional, source excerpt + səhifə, confidence
 - Hallucination qorunması: source olmadan fakt yaradılmır, prompt-da qəti qadağalar
-- Növbəti: skan olunmuş sənədlər üçün OCR, compliance matrix (company knowledge base ilə müqayisə)
+- Skan olunmuş sənədlər/şəkillər üçün Gemini 2.5 Flash (vizual OCR+analiz bir addımda) — Groq mətn-yalnız olduğu üçün bunları emal edə bilmir
+- AI provider seçimi avtomatikdir: normal PDF/DOCX/XLS/TXT/CSV → Groq (pulsuz); şəkil və ya skan olunmuş PDF (mətn çıxarıla bilmirsə) → Gemini (vizual)
 
 **Hüquqi kontekst / multi-jurisdiction arxitektura**
 - `tenders.jurisdiction` sahəsi (default: AZ) — hər tender öz ölkəsinə bağlıdır
