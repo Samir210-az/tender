@@ -29,7 +29,8 @@ export default function RegistrationGate({ children }) {
     return (
       <FullScreenState
         title="Qeydiyyat göndərildi"
-        message={`Ödəniş təsdiqləndikdən sonra hesabınız aktivləşdiriləcək. WhatsApp: ${WHATSAPP_NUMBER}`}
+        message="Ödəniş təsdiqləndikdən sonra hesabınız aktivləşdiriləcək."
+        showWhatsApp
       />
     );
   }
@@ -38,7 +39,8 @@ export default function RegistrationGate({ children }) {
     return (
       <FullScreenState
         title="Abunəlik müddəti bitib"
-        message={`Yeniləmək üçün WhatsApp vasitəsilə əlaqə saxlayın: ${WHATSAPP_NUMBER}`}
+        message="Yeniləmək üçün əlaqə saxlayın."
+        showWhatsApp
       />
     );
   }
@@ -47,7 +49,8 @@ export default function RegistrationGate({ children }) {
     return (
       <FullScreenState
         title="Qeydiyyat təsdiqlənmədi"
-        message={`Ətraflı məlumat üçün WhatsApp vasitəsilə əlaqə saxlayın: ${WHATSAPP_NUMBER}`}
+        message="Ətraflı məlumat üçün əlaqə saxlayın."
+        showWhatsApp
       />
     );
   }
@@ -151,13 +154,37 @@ function Field({ label, children }) {
   );
 }
 
-function FullScreenState({ title, message }) {
+function FullScreenState({ title, message, showWhatsApp }) {
+  const waLink = `https://wa.me/${WHATSAPP_NUMBER}`;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4 text-center">
-      <div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 px-4 text-center">
+      <div className="w-full max-w-sm">
         {title && <h1 className="text-lg font-semibold text-neutral-100">{title}</h1>}
         <p className="mt-2 text-sm text-neutral-400">{message}</p>
+
+        {showWhatsApp && (
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white"
+          >
+            <WhatsAppIcon />
+            Əlaqə saxla
+          </a>
+        )}
       </div>
+      <Footer />
     </div>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.148.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+      <path d="M12.004 2.004C6.478 2.004 2 6.482 2 12.008c0 1.94.55 3.752 1.5 5.293L2 22l4.828-1.474a9.96 9.96 0 0 0 5.176 1.438h.004c5.526 0 10.004-4.478 10.004-10.004 0-2.673-1.04-5.187-2.93-7.076a9.938 9.938 0 0 0-7.078-2.88zm5.877 15.877a8.29 8.29 0 0 1-5.877 2.434h-.003a8.276 8.276 0 0 1-4.226-1.157l-.303-.18-3.15.962.918-3.147-.198-.32a8.28 8.28 0 0 1-1.238-4.365c0-4.583 3.73-8.313 8.317-8.313a8.26 8.26 0 0 1 5.876 2.437 8.256 8.256 0 0 1 2.437 5.876 8.283 8.283 0 0 1-2.553 5.773z" />
+    </svg>
   );
 }
