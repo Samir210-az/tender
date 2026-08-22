@@ -18,25 +18,44 @@ const CATEGORY_LABELS = {
   other: 'Digər',
 };
 
+const REQ_CATEGORY_LABELS = {
+  legal: 'Hüquqi',
+  financial: 'Maliyyə',
+  technical: 'Texniki',
+  experience: 'Təcrübə',
+  personnel: 'Personal',
+  equipment: 'Avadanlıq',
+  administrative: 'İnzibati',
+  deadline: 'Son tarix',
+};
+
 export default function TenderDetail({ tenderId }) {
   const { regId } = useSubscription();
   const [tender, setTender] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [requirements, setRequirements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState({});
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     if (!regId || !tenderId) return;
-    const res = await fetch(`/api/tenders/${tenderId}`, { headers: { 'x-registration-id': regId } });
-    const data = await res.json();
-    if (res.ok) {
-      setTender(data.tender);
-      setDocuments(data.documents || []);
+    const headers = { 'x-registration-id': regId };
+    const [tenderRes, reqRes] = await Promise.all([
+      fetch(`/api/tenders/${tenderId}`, { headers }),
+      fetch(`/api/tenders/${tenderId}/requirements`, { headers }),
+    ]);
+    const tenderData = await tenderRes.json();
+    const reqData = await reqRes.json();
+    if (tenderRes.ok) {
+      setTender(tenderData.tender);
+      setDocuments(tenderData.documents || []);
     } else {
-      setError(data.error || 'Xəta baş verdi');
+      setError(tenderData.error || 'Xəta baş verdi');
     }
+    if (reqRes.ok) setRequirements(reqData.requirements || []);
     setLoading(false);
   }, [regId, tenderId]);
 
@@ -69,6 +88,24 @@ export default function TenderDetail({ tenderId }) {
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
     fetchData();
+  };
+
+  const handleAnalyze = async (docId) => {
+    setAnalyzing((a) => ({ ...a, [docId]: true }));
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/documents/${docId}/analyze`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Analiz xətası');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAnalyzing((a) => ({ ...a, [docId]: false }));
+      fetchData();
+    }
   };
 
   if (loading) {
@@ -120,17 +157,70 @@ export default function TenderDetail({ tenderId }) {
             <p className="text-sm text-neutral-500">Hələ sənəd yüklənməyib.</p>
           )}
           {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
-              <div>
-                <p className="text-sm font-medium">{doc.file_name}</p>
-                <p className="text-xs text-neutral-500">
-                  {CATEGORY_LABELS[doc.category] || 'Təsnif edilməyib'} · {formatSize(doc.file_size)}
-                </p>
+            <div key={doc.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{doc.file_name}</p>
+                  <p className="text-xs text-neutral-500">
+                    {CATEGORY_LABELS[doc.category] || 'Təsnif edilməyib'} · {formatSize(doc.file_size)}
+                  </p>
+                  {doc.analysis_error && (
+                    <p className="mt-1 text-xs text-red-400">{doc.analysis_error}</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <OcrBadge status={doc.ocr_status} />
+                  {doc.ocr_status !== 'done' && doc.ocr_status !== 'processing' && (
+                    <button
+                      onClick={() => handleAnalyze(doc.id)}
+                      disabled={analyzing[doc.id]}
+                      className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                    >
+                      {analyzing[doc.id] ? 'Analiz olunur...' : 'Analiz et'}
+                    </button>
+                  )}
+                </div>
               </div>
-              <OcrBadge status={doc.ocr_status} />
             </div>
           ))}
         </div>
+
+        {requirements.length > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-3 text-lg font-semibold">Tələblər ({requirements.length})</h2>
+            <div className="space-y-2">
+              {requirements.map((req) => (
+                <div key={req.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-neutral-500">
+                          {REQ_CATEGORY_LABELS[req.category] || req.category || '—'}
+                        </span>
+                        {req.mandatory && (
+                          <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+                            MƏCBURİ
+                          </span>
+                        )}
+                        <ConfidenceBadge confidence={req.confidence} />
+                      </div>
+                      <p className="mt-1 font-medium">{req.title}</p>
+                      {req.description && (
+                        <p className="mt-1 text-sm text-neutral-400">{req.description}</p>
+                      )}
+                      {req.source_excerpt && (
+                        <p className="mt-2 border-l-2 border-neutral-700 pl-2 text-xs italic text-neutral-500">
+                          "{req.source_excerpt}"
+                          {req.source_page && ` — səhifə ${req.source_page}`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -139,12 +229,23 @@ export default function TenderDetail({ tenderId }) {
 function OcrBadge({ status }) {
   const map = {
     pending: ['Gözləyir', 'text-neutral-500'],
-    processing: ['İşlənir', 'text-amber-400'],
-    done: ['Hazır', 'text-emerald-400'],
+    processing: ['İşlənir...', 'text-amber-400'],
+    done: ['Analiz olunub', 'text-emerald-400'],
     failed: ['Xəta', 'text-red-400'],
   };
   const [label, cls] = map[status] || [status, 'text-neutral-500'];
   return <span className={`text-xs ${cls}`}>{label}</span>;
+}
+
+function ConfidenceBadge({ confidence }) {
+  const map = {
+    high: ['Yüksək etibar', 'text-emerald-400'],
+    medium: ['Orta etibar', 'text-amber-400'],
+    low: ['Aşağı etibar', 'text-red-400'],
+  };
+  const [label, cls] = map[confidence] || [null, ''];
+  if (!label) return null;
+  return <span className={`text-[10px] ${cls}`}>{label}</span>;
 }
 
 function formatSize(bytes) {
