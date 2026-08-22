@@ -78,3 +78,8 @@ npm run dev
 - **pdfkit**: mütləq dinamik `import()` ilə yüklənməlidir (top-level yox) — əks halda Next.js build zamanı ("Collecting page data") pdfkit-in fs-ə bağlı init kodu xəta verir.
 - **require.resolve()**: webpack bundle daxilində path string əvəzinə rəqəmsal module ID qaytarır — bu səbəbdən font/modul yolları üçün istifadə edilmir.
 - **Groq**: `openai/gpt-oss-120b` reasoning modelidir, `reasoning_effort: 'low'` + `include_reasoning: false` lazımdır (əks halda bəzən boş cavab qaytarır). TPM limiti (8000) səbəbindən uzun sənədlər `lib/ai/chunkText.js` ilə hissələrə bölünür.
+
+### Faza 7 — Təqdimat Paketi (ZIP)
+- "ZIP hazırla" — ən son Texniki Təklif (FORMA 1) + ən son Maliyyə Təklifi (FORMA 2) sənədlərini (DOCX+PDF) bir ZIP faylında birləşdirir
+- Paketə avtomatik "OXU-XƏBƏRDARLIQ.txt" əlavə olunur (AI-generated xəbərdarlığı bir daha)
+- Yalnız mövcud sənədlərdən istifadə edir — hər hansı biri hazırlanmayıbsa, xəbərdarlıq göstərir, mövcud olanla davam edir

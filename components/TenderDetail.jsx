@@ -393,8 +393,85 @@ export default function TenderDetail({ tenderId }) {
 
         {/* MALİYYƏ TƏKLİFİ (FORMA 2) */}
         <PriceSchedule tenderId={tenderId} regId={regId} generatedDocs={generatedDocs.filter((d) => d.doc_type === 'price_schedule')} onRefresh={fetchData} />
+
+        <SubmissionPackage
+          tenderId={tenderId}
+          regId={regId}
+          hasTechnical={generatedDocs.some((d) => d.doc_type === 'technical_proposal')}
+          hasPrice={generatedDocs.some((d) => d.doc_type === 'price_schedule')}
+          generatedDocs={generatedDocs.filter((d) => d.doc_type === 'submission_package')}
+          onRefresh={fetchData}
+        />
       </div>
     </main>
+  );
+}
+
+function SubmissionPackage({ tenderId, regId, hasTechnical, hasPrice, generatedDocs, onRefresh }) {
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/generate-package`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Xəta');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+      onRefresh();
+    }
+  };
+
+  if (!hasTechnical && !hasPrice) return null;
+
+  return (
+    <div className="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Təqdimat Paketi</h2>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {generating ? 'Hazırlanır...' : 'ZIP hazırla'}
+        </button>
+      </div>
+      <p className="mb-2 text-xs text-neutral-400">
+        Texniki Təklif + Maliyyə Təklifi sənədlərini bir ZIP faylında birləşdirir (DOCX + PDF).
+      </p>
+      {(!hasTechnical || !hasPrice) && (
+        <p className="mb-2 text-xs text-amber-400">
+          ⚠ {!hasTechnical && 'Texniki Təklif hələ hazırlanmayıb. '}{!hasPrice && 'Maliyyə Təklifi hələ hazırlanmayıb.'}
+          {' '}Paket yalnız mövcud sənədlərlə hazırlanacaq.
+        </p>
+      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
+      {generatedDocs.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {generatedDocs.map((doc) => (
+            <div key={doc.id} className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-neutral-900 p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{doc.file_name}</p>
+                <p className="text-xs text-neutral-500">{new Date(doc.created_at).toLocaleString('az-AZ')}</p>
+              </div>
+              {doc.download_url && (
+                <a href={doc.download_url} className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">
+                  ZIP endir
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
