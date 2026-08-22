@@ -15,7 +15,8 @@ import {
   buildVerificationUserPrompt,
   VERIFICATION_PROMPT_VERSION,
 } from '@/lib/prompts/finalVerification';
-import { buildAddresseeLines, buildSignatureLines, checkLetterheadCompleteness } from '@/lib/letterhead';
+import { buildAddresseeLines, buildSignatureLines, buildFormaOneDeclaration, checkLetterheadCompleteness } from '@/lib/letterhead';
+import { runDeterministicChecks } from '@/lib/deterministicChecks';
 
 export const maxDuration = 120;
 
@@ -127,18 +128,32 @@ export async function POST(request, { params }) {
     });
     const verifyResult = await completeJSON(VERIFICATION_SYSTEM_PROMPT, verifyUserPrompt, { temperature: 0.1 });
     verificationIssues = verifyResult.issues || [];
+
+    // Deterministik yoxlama — AI-nin qeyri-sabitliyindən (bir dəfə tutur,
+    // bir dəfə tutmur) asılı olmayan, HƏMİŞƏ işləyən əlavə müdafiə qatı.
+    const deterministicIssues = runDeterministicChecks({ sections, companyContext, projects: projects || [] });
+    if (deterministicIssues.length > 0) {
+      verificationIssues = [...verificationIssues, ...deterministicIssues];
+    }
+
     const hasCritical = verificationIssues.some((i) => i.severity === 'critical');
     verificationStatus = verificationIssues.length === 0 ? 'passed' : 'issues_found';
     if (hasCritical) verificationStatus = 'issues_found';
   } catch (err) {
-    // Verification uğursuz olsa belə, sənəd hazırdır — sadəcə "not_verified" qalır,
-    // amma səbəbi UI-da görünən edirik (əvvəllər səssiz console.warn idi).
+    // Verification uğursuz olsa belə, deterministik yoxlamanı yenə də işlət —
+    // bu, Groq-a bağlı deyil, həmişə icra oluna bilər.
     verificationError = err.message;
+    const deterministicIssues = runDeterministicChecks({ sections, companyContext, projects: projects || [] });
+    if (deterministicIssues.length > 0) {
+      verificationIssues = deterministicIssues;
+      verificationStatus = 'issues_found';
+    }
   }
 
   // 3. DOCX qurulması
   const addresseeLines = buildAddresseeLines({ tender });
   const signatureLines = buildSignatureLines({ profile });
+  const formaOneDeclaration = buildFormaOneDeclaration({ tender });
 
   const docxDoc = new Document({
     sections: [{
@@ -151,6 +166,10 @@ export async function POST(request, { params }) {
         new Paragraph({ text: tender.name, heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
         ...addresseeLines.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 60 } })),
         new Paragraph({ text: '', spacing: { after: 200 } }),
+
+        new Paragraph({ text: 'Bəyanat (FORMA 1)', heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 150 } }),
+        ...formaOneDeclaration.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 100 } })),
+
         ...Object.entries(sections).flatMap(([key, text]) => [
           new Paragraph({ text: SECTION_HEADINGS[key], heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
           ...textToParagraphs(text),
@@ -180,6 +199,7 @@ export async function POST(request, { params }) {
       tenderName: tender.name,
       addresseeLines,
       signatureLines,
+      formaOneDeclaration,
       sections: Object.entries(sections).map(([key, text]) => ({ heading: SECTION_HEADINGS[key], text })),
     });
     pdfFileName = `Texniki-Teklif-${Date.now()}.pdf`;

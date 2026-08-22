@@ -86,3 +86,10 @@ npm run dev
 - Verification Engine v2: strukturlaşdırılmış yoxlama — hər "missing/non_compliant" tələb ayrıca tək-tək yoxlanılır (açıq axtarış əvəzinə)
 - Proposal generation temperature 0.5 → 0.3 (üslub müxtəlifliyi ilə fakt təhlükəsizliyi arasında balans, dəqiqlik prioritetdir)
 - Sertifikat/standart uydurma qadağası konkret nümunə ilə gücləndirildi (ISO 27001 halı)
+
+**FORMA 1 tam bəyanat + Deterministik Verification** (tamamlandı)
+- FORMA 1-in ƏSAS HİSSƏSİ (rəsmi nömrələnmiş (a)-(j) bəyanat bəndləri) əlavə olundu — sabit hüquqi mətn, AI yazmır, uydurma riski yoxdur
+- `lib/deterministicChecks.js` — Groq-un qeyri-sabitliyindən (eyni sorğu bəzən problemi tutur, bəzən tutmur) asılı olmayan, HƏMİŞƏ işləyən yoxlamalar:
+  - Uydurma sertifikat/standart adları (ISO, HACCP, OHSAS və s.) — mətndə var, COMPANY DATA-da yoxdursa → KRİTİK
+  - Gələcək/bugünkü tarixli layihələrin "tamamlanmış" kimi yazılması → YÜKSƏK
+- Bu yoxlamalar AI-based Verification Engine-i əvəz etmir, ona əlavə təhlükəsizlik qatıdır
