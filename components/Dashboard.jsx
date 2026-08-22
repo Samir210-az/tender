@@ -9,7 +9,7 @@ export default function Dashboard() {
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', organization: '', deadline: '' });
+  const [form, setForm] = useState({ name: '', organization: '', deadline: '', jurisdiction: 'AZ' });
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -110,6 +110,22 @@ export default function Dashboard() {
               value={form.deadline}
               onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
             />
+            <div>
+              <label className="mb-1.5 block text-sm text-neutral-300">Yurisdiksiya</label>
+              <select
+                className="input"
+                value={form.jurisdiction}
+                onChange={(e) => setForm((f) => ({ ...f, jurisdiction: e.target.value }))}
+              >
+                <option value="AZ">Azərbaycan</option>
+                <option value="UZ" disabled>Özbəkistan (tezliklə)</option>
+                <option value="KZ" disabled>Qazaxıstan (tezliklə)</option>
+                <option value="TM" disabled>Türkmənistan (tezliklə)</option>
+                <option value="TJ" disabled>Tacikistan (tezliklə)</option>
+                <option value="KG" disabled>Qırğızıstan (tezliklə)</option>
+                <option value="TR" disabled>Türkiyə (tezliklə)</option>
+              </select>
+            </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"

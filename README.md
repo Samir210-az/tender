@@ -18,7 +18,13 @@ Tender sənədlərinin AI ilə analizi, şirkət məlumat bazası ilə uyğunluq
 - Mətn çıxarma: PDF (səhifə markerləri ilə), DOCX, XLSX, TXT/CSV
 - Requirement extraction: kateqoriya, məcburi/opsional, source excerpt + səhifə, confidence
 - Hallucination qorunması: source olmadan fakt yaradılmır, prompt-da qəti qadağalar
-- Növbəti: skan olunmuş sənədlər üçün OCR, compliance matrix (company knowledge base ilə müqayisə)**Faza 3 — Compliance matrix + Company Knowledge Base** (növbədə)
+- Növbəti: skan olunmuş sənədlər üçün OCR, compliance matrix (company knowledge base ilə müqayisə)
+
+**Hüquqi kontekst / multi-jurisdiction arxitektura**
+- `tenders.jurisdiction` sahəsi (default: AZ) — hər tender öz ölkəsinə bağlıdır
+- `lib/prompts/legalContext/az.js` — Azərbaycan Dövlət Satınalmaları Qanunu (№ 988-VIQ, 01.01.2024-dən qüvvədə) üzrə **doğrulanmış, mənbəli** referans, AI analiz prompt-una avtomatik qoşulur
+- Digər ölkələr (UZ, KZ, TM, TJ, KG, TR) — sxemdə hazır, UI-da "tezliklə" işarəli, məzmun yalnız bazara giriş vaxtı araşdırılıb əlavə olunmalıdır
+- Hüquqi kontekst AI-yə YALNIZ istiqamətverici referansdır — tender sənədinin öz mətni həmişə üstündür, hüquqi məsləhət deyil**Faza 3 — Compliance matrix + Company Knowledge Base** (növbədə)
 **Faza 4 — Proposal generator + export** (növbədə)
 
 ## Local development

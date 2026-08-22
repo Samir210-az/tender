@@ -23,7 +23,7 @@ export async function POST(request) {
   const check = await requireActiveRegistration(regId);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
-  const { name, organization, deadline } = await request.json();
+  const { name, organization, deadline, jurisdiction } = await request.json();
   if (!name || !name.trim()) {
     return NextResponse.json({ error: 'Tender adı tələb olunur' }, { status: 400 });
   }
@@ -36,9 +36,10 @@ export async function POST(request) {
       name: name.trim(),
       organization: organization?.trim() || null,
       deadline: deadline || null,
+      jurisdiction: jurisdiction || 'AZ',
       status: 'draft',
     })
-    .select('id, name, organization, deadline, status, created_at')
+    .select('id, name, organization, deadline, jurisdiction, status, created_at')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

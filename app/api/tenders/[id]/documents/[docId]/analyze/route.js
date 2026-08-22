@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
   // Tender-in bu qeydiyyata aid olduğunu doğrula
   const { data: tender, error: tenderErr } = await db
     .from('tenders')
-    .select('id')
+    .select('id, jurisdiction')
     .eq('id', tenderId)
     .eq('registration_id', regId)
     .single();
@@ -78,7 +78,7 @@ export async function POST(request, { params }) {
 
     // 3. AI analizi
     const systemPrompt = DOCUMENT_ANALYSIS_SYSTEM_PROMPT;
-    const userPrompt = buildDocumentAnalysisUserPrompt(text, doc.file_name);
+    const userPrompt = buildDocumentAnalysisUserPrompt(text, doc.file_name, tender.jurisdiction);
     const result = await completeJSON(systemPrompt, userPrompt);
 
     if (!result.requirements || !Array.isArray(result.requirements)) {
