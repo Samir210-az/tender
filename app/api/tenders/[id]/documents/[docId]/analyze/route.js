@@ -17,6 +17,17 @@ export const maxDuration = 120; // Çoxhissəli (chunked) analiz üçün — Ver
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
 
+const VALID_REQUIREMENT_CATEGORIES = new Set([
+  'legal', 'financial', 'technical', 'experience',
+  'personnel', 'equipment', 'administrative', 'deadline',
+]);
+const VALID_CONFIDENCE = new Set(['high', 'medium', 'low']);
+const VALID_DOCUMENT_CATEGORIES = new Set([
+  'tender_notice', 'terms_of_reference', 'technical_spec', 'administrative',
+  'eligibility', 'financial', 'qualification', 'contract_draft',
+  'evaluation_criteria', 'pricing_form', 'submission_form', 'other',
+]);
+
 export async function POST(request, { params }) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);
@@ -132,18 +143,22 @@ export async function POST(request, { params }) {
     if (result.requirements.length > 0) {
       const rows = result.requirements.map((r) => {
         const parsedDeadline = r.deadline ? parseAzDate(r.deadline) : null;
+        const rawCategory = (r.category || '').toLowerCase().trim();
+        const category = VALID_REQUIREMENT_CATEGORIES.has(rawCategory) ? rawCategory : null;
+        const rawConfidence = (r.confidence || '').toLowerCase().trim();
+        const confidence = VALID_CONFIDENCE.has(rawConfidence) ? rawConfidence : 'low';
         return {
           tender_id: tenderId,
           document_id: docId,
           title: r.title || 'Başlıqsız tələb',
           description: r.description || null,
-          category: r.category || null,
+          category, // whitelist-dən kənar dəyər DB constraint-i pozmasın deyə null-a düşür
           mandatory: r.mandatory !== false,
           deadline: parsedDeadline, // parse olunmayıbsa null — heç vaxt uydurma
           deadline_raw: r.deadline || null, // orijinal mətn HƏMİŞƏ saxlanılır
           source_excerpt: r.source_excerpt || null,
           source_page: r.source_page || null,
-          confidence: r.confidence || 'low',
+          confidence,
           ai_provider: aiMeta.provider,
           ai_model: aiMeta.model,
         };
@@ -153,10 +168,12 @@ export async function POST(request, { params }) {
     }
 
     // 5. Sənəd sətrini yenilə
+    const rawDocCategory = (result.document_category || '').toLowerCase().trim();
+    const docCategory = VALID_DOCUMENT_CATEGORIES.has(rawDocCategory) ? rawDocCategory : 'other';
     await db
       .from('tender_documents')
       .update({
-        category: result.document_category || 'other',
+        category: docCategory,
         ocr_status: 'done',
         page_count: pageCount,
         ai_language: result.language_detected || null,
