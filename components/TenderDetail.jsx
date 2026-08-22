@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSubscription } from '@/lib/useSubscription';
+import { computeRisks, summarizeRisks, computeBidRecommendation } from '@/lib/riskEngine';
 
 const CATEGORY_LABELS = {
   tender_notice: 'Elan',
@@ -169,6 +170,13 @@ export default function TenderDetail({ tenderId }) {
           {tender.deadline && <DeadlineCountdown deadline={tender.deadline} />}
           {typeof tender.readiness_score === 'number' && (
             <ReadinessScoreCard score={tender.readiness_score} breakdown={tender.readiness_breakdown} />
+          )}
+          {requirements.some((r) => r.compliance_checked_at) && (
+            <BidDecisionPanel
+              requirements={requirements}
+              readinessScore={tender.readiness_score}
+              deadline={tender.deadline}
+            />
           )}
         </div>
 
@@ -375,6 +383,61 @@ function DeadlineCountdown({ deadline }) {
       {isCritical && '⚠ '}
       Son tarix: {dateLabel} · {days} gün {hours} saat qalıb
     </p>
+  );
+}
+
+function BidDecisionPanel({ requirements, readinessScore, deadline }) {
+  const risks = computeRisks(requirements);
+  const summary = summarizeRisks(risks);
+  const daysUntilDeadline = deadline
+    ? Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+  const { recommendation, reasons } = computeBidRecommendation(
+    risks,
+    typeof readinessScore === 'number' ? readinessScore : null,
+    daysUntilDeadline
+  );
+
+  const recMap = {
+    YES: { label: 'BƏLİ', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+    REVIEW: { label: 'NƏZƏRDƏN KEÇİR', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+    NO: { label: 'YOX', cls: 'bg-red-500/15 text-red-400 border-red-500/30' },
+  };
+  const rec = recMap[recommendation];
+
+  return (
+    <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-neutral-400">Tenderə qatılaqmı?</span>
+        <span className={`rounded-lg border px-3 py-1 text-sm font-bold ${rec.cls}`}>{rec.label}</span>
+      </div>
+      <ul className="mt-2 space-y-1">
+        {reasons.map((r, i) => (
+          <li key={i} className="text-xs text-neutral-400">• {r}</li>
+        ))}
+      </ul>
+
+      {(summary.critical > 0 || summary.high > 0 || summary.medium > 0 || summary.low > 0) && (
+        <div className="mt-3 flex flex-wrap gap-3 border-t border-neutral-800 pt-3">
+          {summary.critical > 0 && <RiskCount label="Kritik" count={summary.critical} cls="text-red-400" />}
+          {summary.high > 0 && <RiskCount label="Yüksək" count={summary.high} cls="text-orange-400" />}
+          {summary.medium > 0 && <RiskCount label="Orta" count={summary.medium} cls="text-amber-400" />}
+          {summary.low > 0 && <RiskCount label="Aşağı" count={summary.low} cls="text-neutral-500" />}
+        </div>
+      )}
+
+      <p className="mt-3 text-[11px] text-neutral-600">
+        Bu, qərar-dəstək vasitəsidir, zəmanət deyil — son qərarı sən verməlisən.
+      </p>
+    </div>
+  );
+}
+
+function RiskCount({ label, count, cls }) {
+  return (
+    <span className={`text-xs ${cls}`}>
+      <span className="font-bold">{count}</span> {label}
+    </span>
   );
 }
 

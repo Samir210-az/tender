@@ -64,3 +64,8 @@ npm run dev
 **Deadline Engine + Document Expiry Engine** (tamamlandı)
 - Tender son tarixi üçün real-time geri sayım (gün/saat), 3 gündən az qalanda qırmızı xəbərdarlıq
 - Şirkət sertifikat/lisenziya sənədləri üçün bitmə tarixi izlənməsi — `/company`-nin yuxarısında ümumi xəbərdarlıq (bitib / 30 gün ərzində bitəcək)
+
+**Risk Engine + Bid Decision Panel** (tamamlandı)
+- `lib/riskEngine.js` — tamamilə deterministik (AI çağırışı yoxdur), şəffaf qaydalarla risk səviyyəsi: CRITICAL/HIGH/MEDIUM/LOW
+- "Tenderə qatılaqmı?" paneli — BƏLİ/NƏZƏRDƏN KEÇİR/YOX tövsiyəsi, səbəblərlə
+- Açıq qeyd: "qərar-dəstək vasitəsidir, zəmanət deyil" (spesifikasiya, 45-ci bənd)
