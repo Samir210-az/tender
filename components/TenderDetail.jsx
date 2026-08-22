@@ -220,6 +220,8 @@ export default function TenderDetail({ tenderId }) {
               Şirkət profili (VÖEN, dövriyyə və s.) tender tələbləri ilə müqayisə olunur.{' '}
               <a href="/company" className="underline">Profili redaktə et</a>
             </p>
+
+            <MissingMandatoryList requirements={requirements} />
             <div className="space-y-2">
               {requirements.map((req) => (
                 <div key={req.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
@@ -273,6 +275,41 @@ export default function TenderDetail({ tenderId }) {
         )}
       </div>
     </main>
+  );
+}
+
+function MissingMandatoryList({ requirements }) {
+  const problematic = requirements.filter(
+    (r) => r.mandatory && ['missing', 'non_compliant', 'partially_compliant'].includes(r.status)
+  );
+
+  if (problematic.length === 0) return null;
+
+  const statusLabels = {
+    missing: 'Məlumat yoxdur',
+    non_compliant: 'Uyğun deyil',
+    partially_compliant: 'Qismən uyğun',
+  };
+
+  return (
+    <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <h3 className="mb-2 text-sm font-semibold text-amber-400">
+        ⚠ Diqqət tələb edən icbari tələblər ({problematic.length})
+      </h3>
+      <p className="mb-3 text-xs text-neutral-400">
+        Bu tələblər MƏCBURİdir və hazırda şirkət profilində təsdiqlənməyib. Tenderə qatılmadan əvvəl həll edilməlidir.
+      </p>
+      <ul className="space-y-1.5">
+        {problematic.map((r) => (
+          <li key={r.id} className="flex items-start gap-2 text-xs">
+            <span className="mt-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-400 shrink-0">
+              {statusLabels[r.status]}
+            </span>
+            <span className="text-neutral-300">{r.title}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
