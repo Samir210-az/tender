@@ -86,6 +86,10 @@ export async function POST(request, { params }) {
     }
 
     // 4. Requirements-i DB-yə yaz
+    // Əvvəlcə bu sənəd üçün köhnə tələbləri sil (təkrar analiz zamanı
+    // dublikat yaranmasın — idempotent re-analiz).
+    await db.from('tender_requirements').delete().eq('document_id', docId);
+
     if (result.requirements.length > 0) {
       const rows = result.requirements.map((r) => ({
         tender_id: tenderId,
