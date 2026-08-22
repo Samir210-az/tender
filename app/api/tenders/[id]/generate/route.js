@@ -81,7 +81,11 @@ export async function POST(request, { params }) {
       standardIntro: profile.standard_intro,
       standardConclusion: profile.standard_conclusion,
     });
-    aiResult = await completeJSON(systemPrompt, userPrompt);
+    // Yaradıcı yazı üçün daha yüksək temperature (0.5) — hər generasiyada
+    // fərqli cümlə strukturu/frazeologiya, robotik təkrar olmasın. Faktlar
+    // yenə də yalnız COMPANY DATA-dan gəlir (temperature bunu dəyişmir,
+    // yalnız ifadə tərzini) — prompt-dakı qadağalar sabit qalır.
+    aiResult = await completeJSON(systemPrompt, userPrompt, { temperature: 0.5 });
   } catch (err) {
     return NextResponse.json({ error: `Mətn generasiyası xətası: ${err.message}` }, { status: 500 });
   }
