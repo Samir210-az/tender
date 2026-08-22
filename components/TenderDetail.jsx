@@ -340,9 +340,9 @@ export default function TenderDetail({ tenderId }) {
               </div>
             )}
 
-            {generatedDocs.length > 0 && (
+            {generatedDocs.filter((d) => d.doc_type !== 'price_schedule').length > 0 && (
               <div className="space-y-2">
-                {generatedDocs.map((doc) => (
+                {generatedDocs.filter((d) => d.doc_type !== 'price_schedule').map((doc) => (
                   <div key={doc.id} className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -390,8 +390,151 @@ export default function TenderDetail({ tenderId }) {
             )}
           </div>
         )}
+
+        {/* MALİYYƏ TƏKLİFİ (FORMA 2) */}
+        <PriceSchedule tenderId={tenderId} regId={regId} generatedDocs={generatedDocs.filter((d) => d.doc_type === 'price_schedule')} onRefresh={fetchData} />
       </div>
     </main>
+  );
+}
+
+function PriceSchedule({ tenderId, regId, generatedDocs, onRefresh }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ description: '', unit: 'ədəd', quantity: 1, unit_price: '' });
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchItems = useCallback(async () => {
+    if (!regId) return;
+    const res = await fetch(`/api/tenders/${tenderId}/price-items`, { headers: { 'x-registration-id': regId } });
+    const data = await res.json();
+    setItems(data.items || []);
+    setLoading(false);
+  }, [tenderId, regId]);
+
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    if (!form.description.trim()) return;
+    await fetch(`/api/tenders/${tenderId}/price-items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+      body: JSON.stringify(form),
+    });
+    setForm({ description: '', unit: 'ədəd', quantity: 1, unit_price: '' });
+    fetchItems();
+  };
+
+  const handleUpdatePrice = async (itemId, unit_price) => {
+    await fetch(`/api/tenders/${tenderId}/price-items/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+      body: JSON.stringify({ unit_price: unit_price === '' ? null : parseFloat(unit_price) }),
+    });
+    fetchItems();
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    await fetch(`/api/tenders/${tenderId}/price-items/${itemId}`, { method: 'DELETE', headers: { 'x-registration-id': regId } });
+    fetchItems();
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/generate-price-schedule`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Xəta');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+      onRefresh();
+    }
+  };
+
+  const grandTotal = items.reduce((sum, i) => sum + (i.unit_price ? Number(i.quantity) * Number(i.unit_price) : 0), 0);
+  const allPriced = items.length > 0 && items.every((i) => i.unit_price !== null);
+
+  return (
+    <div className="mt-8">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Maliyyə Təklifi (FORMA 2)</h2>
+        <button
+          onClick={handleGenerate}
+          disabled={generating || !allPriced}
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+        >
+          {generating ? 'Hazırlanır...' : 'Cədvəli hazırla'}
+        </button>
+      </div>
+      <p className="mb-3 text-xs text-neutral-500">
+        Qiymətlər AI tərəfindən yaradılmır — birbaşa sənin daxil etdiyin rəqəmlərdir. Kataloqdakı adlarla uyğun gəlirsə, qiymət avtomatik təklif olunur (dəyişə bilərsən).
+      </p>
+      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+
+      <form onSubmit={handleAddItem} className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4 sm:grid-cols-5">
+        <input className="input col-span-2 sm:col-span-2" placeholder="Təsvir" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+        <input className="input" placeholder="Ölçü" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
+        <input type="number" className="input" placeholder="Miqdar" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
+        <button type="submit" className="rounded-lg bg-neutral-700 px-2 py-2 text-xs font-medium text-white">+ Sətir</button>
+      </form>
+
+      {!loading && items.length === 0 && <p className="text-sm text-neutral-500">Hələ sətir əlavə edilməyib.</p>}
+
+      {items.length > 0 && (
+        <div className="space-y-1.5">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 p-2.5 text-xs">
+              <span className="w-5 shrink-0 text-neutral-500">{item.item_no}</span>
+              <span className="flex-1 truncate">{item.description}</span>
+              <span className="w-14 shrink-0 text-neutral-500">{item.unit}</span>
+              <span className="w-10 shrink-0 text-neutral-500">×{item.quantity}</span>
+              <input
+                type="number"
+                defaultValue={item.unit_price ?? ''}
+                placeholder="qiymət"
+                onBlur={(e) => handleUpdatePrice(item.id, e.target.value)}
+                className="input w-20 shrink-0 py-1 text-xs"
+              />
+              {item.matched_product_id && <span className="shrink-0 text-[10px] text-emerald-400" title="Kataloqdan təklif olunub">📋</span>}
+              <button onClick={() => handleDeleteItem(item.id)} className="shrink-0 text-red-400">✕</button>
+            </div>
+          ))}
+          <div className="flex items-center justify-between rounded-lg bg-neutral-900 p-3">
+            <span className="text-sm text-neutral-400">Yekun cəm:</span>
+            <span className="text-lg font-bold text-indigo-400">{grandTotal.toFixed(2)} AZN</span>
+          </div>
+          {!allPriced && <p className="text-xs text-amber-400">⚠ Bütün sətirlərə qiymət daxil edilməyib — cədvəl hazırlana bilməz.</p>}
+        </div>
+      )}
+
+      {generatedDocs.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {generatedDocs.map((doc) => (
+            <div key={doc.id} className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{doc.file_name}</p>
+                  <p className="text-xs text-neutral-500">{new Date(doc.created_at).toLocaleString('az-AZ')}</p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  {doc.download_url && <a href={doc.download_url} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white">DOCX</a>}
+                  {doc.download_url_pdf && <a href={doc.download_url_pdf} className="rounded-lg bg-indigo-700 px-3 py-1.5 text-xs font-medium text-white">PDF</a>}
+                </div>
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-500">Qiymətlər birbaşa sənin daxil etdiyin datadan — AI generasiyası deyil, amma yenə də təqdim etməzdən əvvəl yoxla.</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -93,3 +93,10 @@ npm run dev
   - Uydurma sertifikat/standart adları (ISO, HACCP, OHSAS və s.) — mətndə var, COMPANY DATA-da yoxdursa → KRİTİK
   - Gələcək/bugünkü tarixli layihələrin "tamamlanmış" kimi yazılması → YÜKSƏK
 - Bu yoxlamalar AI-based Verification Engine-i əvəz etmir, ona əlavə təhlükəsizlik qatıdır
+
+**Faza 6 — Maliyyə Təklifi (FORMA 2)** (tamamlandı)
+- `/company` — Məhsul/Xidmət kataloqu (ad, ölçü vahidi, qiymət) — spesifikasiya 10.H
+- Tender detail-da "Maliyyə Təklifi" bölməsi — sətir-sətir qiymət cədvəli (təsvir, ölçü, miqdar, qiymət), kataloqdan avtomatik qiymət təklifi (ad uyğun gələndə)
+- Real FORMA 2 strukturu (Nazirlər Kabineti Qərarı № 503): № | Təsvir | Ölçü vahidi | Miqdar | Vahid qiyməti | Cəm, Yekun cəm
+- **Qiymətlər AI tərəfindən YARADILMIR** — birbaşa istifadəçinin daxil etdiyi/kataloqdan seçdiyi rəqəmlərdir, Final Verification tələb olunmur (`verification_status: not_verified`, əsaslandırılıb)
+- DOCX (cədvəl formatında) + PDF (landscape, DejaVu Sans) export
