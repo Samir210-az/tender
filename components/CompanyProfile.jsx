@@ -3,24 +3,26 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSubscription } from '@/lib/useSubscription';
 
-const CATEGORY_LABELS = {
+const DOC_CATEGORY_LABELS = {
   legal: 'Hüquqi',
   financial: 'Maliyyə',
   certificate: 'Sertifikat',
   license: 'Lisenziya',
-  experience_reference: 'Təcrübə/Referans',
+  reference_letter: 'Referans məktubu',
   other: 'Digər',
 };
 
-export default function CompanyPage() {
+export default function CompanyProfile() {
   const { regId } = useSubscription();
   const [profile, setProfile] = useState({});
+  const [projects, setProjects] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [projectForm, setProjectForm] = useState({ project_name: '', client_name: '', contract_value: '', start_date: '', end_date: '', description: '' });
   const [uploadCategory, setUploadCategory] = useState('legal');
-  const [uploadExpiry, setUploadExpiry] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -28,13 +30,16 @@ export default function CompanyPage() {
   const fetchAll = useCallback(async () => {
     if (!regId) return;
     const headers = { 'x-registration-id': regId };
-    const [profileRes, docsRes] = await Promise.all([
+    const [profileRes, projectsRes, docsRes] = await Promise.all([
       fetch('/api/company', { headers }),
+      fetch('/api/company/projects', { headers }),
       fetch('/api/company/documents', { headers }),
     ]);
     const profileData = await profileRes.json();
+    const projectsData = await projectsRes.json();
     const docsData = await docsRes.json();
     setProfile(profileData.profile || {});
+    setProjects(projectsData.projects || []);
     setDocuments(docsData.documents || []);
     setLoading(false);
   }, [regId]);
@@ -43,18 +48,24 @@ export default function CompanyPage() {
     fetchAll();
   }, [fetchAll]);
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleProfileChange = (field, value) => {
+    setProfile((p) => ({ ...p, [field]: value }));
     setSaved(false);
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setError('');
     try {
       const res = await fetch('/api/company', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
         body: JSON.stringify(profile),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Yadda saxlanmadı');
+      setProfile(data.profile);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,38 +73,62 @@ export default function CompanyPage() {
     }
   };
 
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+  const handleAddProject = async (e) => {
+    e.preventDefault();
     setError('');
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('category', uploadCategory);
-    if (uploadExpiry) formData.append('expiry_date', uploadExpiry);
+    if (!projectForm.project_name.trim()) {
+      setError('Layihə adı tələb olunur');
+      return;
+    }
     try {
-      const res = await fetch('/api/company/documents', {
+      const res = await fetch('/api/company/projects', {
         method: 'POST',
-        headers: { 'x-registration-id': regId },
-        body: formData,
+        headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+        body: JSON.stringify(projectForm),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Yükləmə xətası');
-      setUploadExpiry('');
+      if (!res.ok) throw new Error(data.error || 'Xəta');
+      setShowProjectForm(false);
+      setProjectForm({ project_name: '', client_name: '', contract_value: '', start_date: '', end_date: '', description: '' });
       fetchAll();
     } catch (err) {
       setError(err.message);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDeleteDoc = async (docId) => {
-    await fetch(`/api/company/documents/${docId}`, {
-      method: 'DELETE',
-      headers: { 'x-registration-id': regId },
-    });
+  const handleDeleteProject = async (id) => {
+    await fetch(`/api/company/projects/${id}`, { method: 'DELETE', headers: { 'x-registration-id': regId } });
+    fetchAll();
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    setError('');
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', uploadCategory);
+      try {
+        const res = await fetch('/api/company/documents', {
+          method: 'POST',
+          headers: { 'x-registration-id': regId },
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(`${file.name}: ${data.error}`);
+      } catch (err) {
+        setError((p) => (p ? `${p}\n${err.message}` : err.message));
+      }
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fetchAll();
+  };
+
+  const handleDeleteDocument = async (id) => {
+    await fetch(`/api/company/documents/${id}`, { method: 'DELETE', headers: { 'x-registration-id': regId } });
     fetchAll();
   };
 
@@ -103,101 +138,123 @@ export default function CompanyPage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 p-6 text-neutral-100">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-3xl">
         <a href="/" className="text-sm text-neutral-500 hover:text-neutral-300">← Geri</a>
         <h1 className="mt-3 mb-6 text-2xl font-semibold">Şirkət profili</h1>
 
-        <div className="mb-8 space-y-3 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-          <Field label="Hüquqi ad">
-            <input className="input" value={profile.legal_name || ''} onChange={(e) => setProfile((p) => ({ ...p, legal_name: e.target.value }))} />
-          </Field>
-          <Field label="VÖEN">
-            <input className="input" value={profile.voen || ''} onChange={(e) => setProfile((p) => ({ ...p, voen: e.target.value }))} />
-          </Field>
-          <Field label="Hüquqi ünvan">
-            <input className="input" value={profile.legal_address || ''} onChange={(e) => setProfile((p) => ({ ...p, legal_address: e.target.value }))} />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Telefon">
-              <input className="input" value={profile.phone || ''} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} />
+        {error && <p className="mb-4 whitespace-pre-line text-sm text-red-400">{error}</p>}
+
+        <section className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+          <h2 className="mb-4 text-lg font-medium">Əsas məlumatlar</h2>
+          <div className="space-y-3">
+            <Field label="Hüquqi ad">
+              <input className="input" value={profile.legal_name || ''} onChange={(e) => handleProfileChange('legal_name', e.target.value)} />
             </Field>
-            <Field label="Email">
-              <input className="input" value={profile.email || ''} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} />
+            <Field label="VÖEN">
+              <input className="input" value={profile.voen || ''} onChange={(e) => handleProfileChange('voen', e.target.value)} />
             </Field>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Təsis ili">
-              <input className="input" type="number" value={profile.founded_year || ''} onChange={(e) => setProfile((p) => ({ ...p, founded_year: e.target.value ? parseInt(e.target.value) : null }))} />
+            <Field label="Hüquqi ünvan">
+              <input className="input" value={profile.legal_address || ''} onChange={(e) => handleProfileChange('legal_address', e.target.value)} />
+            </Field>
+            <Field label="Fəaliyyət sahələri">
+              <input className="input" placeholder="məs. İKT, tikinti" value={profile.sectors || ''} onChange={(e) => handleProfileChange('sectors', e.target.value)} />
+            </Field>
+            <Field label="Şirkət haqqında">
+              <textarea className="input" rows={3} value={profile.description || ''} onChange={(e) => handleProfileChange('description', e.target.value)} />
             </Field>
             <Field label="İşçi sayı">
-              <input className="input" type="number" value={profile.employee_count || ''} onChange={(e) => setProfile((p) => ({ ...p, employee_count: e.target.value ? parseInt(e.target.value) : null }))} />
+              <input type="number" className="input" value={profile.employee_count || ''} onChange={(e) => handleProfileChange('employee_count', e.target.value ? parseInt(e.target.value) : null)} />
             </Field>
-            <Field label="İllik dövriyyə (AZN)">
-              <input className="input" type="number" value={profile.annual_turnover_azn || ''} onChange={(e) => setProfile((p) => ({ ...p, annual_turnover_azn: e.target.value ? parseFloat(e.target.value) : null }))} />
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Dövriyyə (son il)">
+                <input type="number" className="input" placeholder="AZN" value={profile.turnover_year1 || ''} onChange={(e) => handleProfileChange('turnover_year1', e.target.value ? parseFloat(e.target.value) : null)} />
+              </Field>
+              <Field label="İl">
+                <input className="input" placeholder="2025" value={profile.turnover_year1_label || ''} onChange={(e) => handleProfileChange('turnover_year1_label', e.target.value)} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Dövriyyə (əvvəlki il)">
+                <input type="number" className="input" placeholder="AZN" value={profile.turnover_year2 || ''} onChange={(e) => handleProfileChange('turnover_year2', e.target.value ? parseFloat(e.target.value) : null)} />
+              </Field>
+              <Field label="İl">
+                <input className="input" placeholder="2024" value={profile.turnover_year2_label || ''} onChange={(e) => handleProfileChange('turnover_year2_label', e.target.value)} />
+              </Field>
+            </div>
           </div>
-          <Field label="Şirkət təsviri">
-            <textarea className="input" rows={3} value={profile.description || ''} onChange={(e) => setProfile((p) => ({ ...p, description: e.target.value }))} />
-          </Field>
-
-          {error && <p className="text-sm text-red-400">{error}</p>}
-
           <button
-            onClick={handleSave}
+            onClick={handleSaveProfile}
             disabled={saving}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {saving ? 'Saxlanılır...' : saved ? '✓ Saxlanıldı' : 'Saxla'}
+            {saving ? 'Saxlanılır...' : saved ? 'Saxlanıldı ✓' : 'Yadda saxla'}
           </button>
-        </div>
+        </section>
 
-        <h2 className="mb-3 text-lg font-semibold">Sənədlər</h2>
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-medium">Təcrübə / Analoji layihələr</h2>
+            <button onClick={() => setShowProjectForm((s) => !s)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
+              + Layihə əlavə et
+            </button>
+          </div>
 
-        <div className="mb-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-900 p-5">
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <select className="input" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
-              {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
+          {showProjectForm && (
+            <form onSubmit={handleAddProject} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+              <input className="input" placeholder="Layihə adı" value={projectForm.project_name} onChange={(e) => setProjectForm((f) => ({ ...f, project_name: e.target.value }))} />
+              <input className="input" placeholder="Müştəri" value={projectForm.client_name} onChange={(e) => setProjectForm((f) => ({ ...f, client_name: e.target.value }))} />
+              <input type="number" className="input" placeholder="Müqavilə dəyəri (AZN)" value={projectForm.contract_value} onChange={(e) => setProjectForm((f) => ({ ...f, contract_value: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" className="input" value={projectForm.start_date} onChange={(e) => setProjectForm((f) => ({ ...f, start_date: e.target.value }))} />
+                <input type="date" className="input" value={projectForm.end_date} onChange={(e) => setProjectForm((f) => ({ ...f, end_date: e.target.value }))} />
+              </div>
+              <textarea className="input" rows={2} placeholder="Təsvir" value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} />
+              <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>
+            </form>
+          )}
+
+          <div className="space-y-2">
+            {projects.length === 0 && <p className="text-sm text-neutral-500">Hələ layihə əlavə edilməyib.</p>}
+            {projects.map((p) => (
+              <div key={p.id} className="flex items-start justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+                <div>
+                  <p className="text-sm font-medium">{p.project_name}</p>
+                  {p.client_name && <p className="text-xs text-neutral-400">{p.client_name}</p>}
+                  {p.contract_value && <p className="text-xs text-neutral-500">{p.contract_value} {p.currency}</p>}
+                </div>
+                <button onClick={() => handleDeleteProject(p.id)} className="text-xs text-red-400">Sil</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-lg font-medium">Sənədlər</h2>
+          <div className="mb-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-900 p-5">
+            <select className="input mb-3" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
+              {Object.entries(DOC_CATEGORY_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
               ))}
             </select>
-            <input
-              className="input"
-              type="date"
-              placeholder="Bitmə tarixi (opsional)"
-              value={uploadExpiry}
-              onChange={(e) => setUploadExpiry(e.target.value)}
-            />
+            <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" id="company-file-upload" />
+            <label htmlFor="company-file-upload" className="block cursor-pointer rounded-lg bg-emerald-600 py-2.5 text-center text-sm font-medium text-white">
+              {uploading ? 'Yüklənir...' : 'Sənəd yüklə'}
+            </label>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-            onChange={handleUpload}
-            className="hidden"
-            id="company-file-upload"
-          />
-          <label htmlFor="company-file-upload" className="block cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-sm font-medium text-white">
-            {uploading ? 'Yüklənir...' : 'Sənəd yüklə'}
-          </label>
-        </div>
 
-        <div className="space-y-2">
-          {documents.length === 0 && <p className="text-sm text-neutral-500">Hələ sənəd yüklənməyib.</p>}
-          {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{doc.doc_name}</p>
-                <p className="text-xs text-neutral-500">
-                  {CATEGORY_LABELS[doc.category]}
-                  {doc.expiry_date && <ExpiryBadge date={doc.expiry_date} />}
-                </p>
+          <div className="space-y-2">
+            {documents.length === 0 && <p className="text-sm text-neutral-500">Hələ sənəd yüklənməyib.</p>}
+            {documents.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+                <div>
+                  <p className="text-sm font-medium">{doc.file_name}</p>
+                  <p className="text-xs text-neutral-500">{DOC_CATEGORY_LABELS[doc.category]}</p>
+                </div>
+                <button onClick={() => handleDeleteDocument(doc.id)} className="text-xs text-red-400">Sil</button>
               </div>
-              <button onClick={() => handleDeleteDoc(doc.id)} className="shrink-0 text-xs text-red-400 hover:text-red-300">
-                Sil
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
@@ -210,11 +267,4 @@ function Field({ label, children }) {
       {children}
     </label>
   );
-}
-
-function ExpiryBadge({ date }) {
-  const days = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (days < 0) return <span className="ml-2 text-red-400">Müddəti bitib</span>;
-  if (days <= 30) return <span className="ml-2 text-amber-400">{days} gün qalıb</span>;
-  return <span className="ml-2">Bitmə: {new Date(date).toLocaleDateString('az-AZ')}</span>;
 }

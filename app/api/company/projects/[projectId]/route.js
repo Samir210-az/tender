@@ -7,24 +7,12 @@ export async function DELETE(request, { params }) {
   const check = await requireActiveRegistration(regId);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
-  const { docId } = await params;
+  const { projectId } = await params;
   const db = getSupabaseAdmin();
-
-  const { data: doc } = await db
-    .from('company_documents')
-    .select('file_path')
-    .eq('id', docId)
-    .eq('registration_id', regId)
-    .single();
-
-  if (doc) {
-    await db.storage.from('company-documents').remove([doc.file_path]);
-  }
-
   const { error } = await db
-    .from('company_documents')
+    .from('company_projects')
     .delete()
-    .eq('id', docId)
+    .eq('id', projectId)
     .eq('registration_id', regId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

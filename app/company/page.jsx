@@ -1,7 +1,7 @@
 import RegistrationGate from '@/components/RegistrationGate';
 import CompanyProfile from '@/components/CompanyProfile';
 
-export default function CompanyPageRoute() {
+export default function CompanyPage() {
   return (
     <RegistrationGate>
       <CompanyProfile />

@@ -252,10 +252,17 @@ export default function TenderDetail({ tenderId }) {
                           Son tarix: {req.deadline ? new Date(req.deadline).toLocaleString('az-AZ') : req.deadline_raw}
                         </p>
                       )}
-                      {req.compliance_reasoning && (
-                        <p className="mt-2 rounded bg-neutral-800/50 p-2 text-xs text-neutral-400">
-                          {req.compliance_reasoning}
-                        </p>
+                      {(req.compliance_evidence || req.compliance_note) && (
+                        <div className="mt-2 rounded bg-neutral-800/50 p-2 text-xs">
+                          {req.compliance_evidence && (
+                            <p className="text-neutral-300">
+                              <span className="text-neutral-500">Dəlil: </span>{req.compliance_evidence}
+                            </p>
+                          )}
+                          {req.compliance_note && (
+                            <p className="mt-1 text-neutral-400">{req.compliance_note}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

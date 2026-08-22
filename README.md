@@ -28,6 +28,12 @@ Tender sənədlərinin AI ilə analizi, şirkət məlumat bazası ilə uyğunluq
 - Hüquqi kontekst AI-yə YALNIZ istiqamətverici referansdır — tender sənədinin öz mətni həmişə üstündür, hüquqi məsləhət deyil
 
 **Faza 4 — Company Knowledge Base + Compliance Matrix** (tamamlandı)
+- `/company` — şirkət profili (VÖEN, dövriyyə, işçi sayı), analoji layihələr, sənədlər (hüquqi/maliyyə/sertifikat/lisenziya/referans)
+- Compliance yoxlaması: hər tender tələbi şirkət məlumatları ilə müqayisə olunur (Groq, batch-lənmiş)
+- "NO FAKE COMPLIANCE" prinsipi: evidence yoxdursa status "missing", AI özü qərar vermir — "needs_review" ilə insan yoxlamasına yönləndirir
+- Statuslar: compliant / partially_compliant / non_compliant / missing / not_applicable / needs_review
+
+**Faza 4 — Company Knowledge Base + Compliance Matrix** (tamamlandı)
 - `/company` — şirkət profili (VÖEN, dövriyyə, işçi sayı və s.) + sənədlər (sertifikat/lisenziya/hüquqi, bitmə tarixi izlənməsi ilə)
 - "Compliance yoxla" — hər tender tələbini şirkət profili ilə müqayisə edir, YALNIZ real doldurulmuş sahələrdən istifadə edir (uydurmur)
 - Status: compliant / non_compliant / missing / needs_review / not_applicable — hər biri konkret reasoning ilə

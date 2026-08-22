@@ -9,38 +9,41 @@ export async function GET(request) {
 
   const db = getSupabaseAdmin();
   const { data, error } = await db
-    .from('company_profiles')
+    .from('company_projects')
     .select('*')
     .eq('registration_id', regId)
-    .maybeSingle();
+    .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ profile: data || null });
+  return NextResponse.json({ projects: data });
 }
 
-export async function PUT(request) {
+export async function POST(request) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
   const body = await request.json();
-  const allowedFields = [
-    'legal_name', 'voen', 'legal_address', 'description', 'sectors',
-    'establishment_date', 'employee_count',
-    'turnover_year1', 'turnover_year1_label', 'turnover_year2', 'turnover_year2_label',
-  ];
-  const payload = { registration_id: regId, updated_at: new Date().toISOString() };
-  for (const f of allowedFields) {
-    if (f in body) payload[f] = body[f] === '' ? null : body[f];
+  if (!body.project_name?.trim()) {
+    return NextResponse.json({ error: 'Layihə adı tələb olunur' }, { status: 400 });
   }
 
   const db = getSupabaseAdmin();
   const { data, error } = await db
-    .from('company_profiles')
-    .upsert(payload, { onConflict: 'registration_id' })
+    .from('company_projects')
+    .insert({
+      registration_id: regId,
+      project_name: body.project_name.trim(),
+      client_name: body.client_name || null,
+      contract_value: body.contract_value || null,
+      currency: body.currency || 'AZN',
+      start_date: body.start_date || null,
+      end_date: body.end_date || null,
+      description: body.description || null,
+    })
     .select('*')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ profile: data });
+  return NextResponse.json({ project: data });
 }
