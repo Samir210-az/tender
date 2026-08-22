@@ -28,6 +28,33 @@ const VALID_DOCUMENT_CATEGORIES = new Set([
   'evaluation_criteria', 'pricing_form', 'submission_form', 'other',
 ]);
 
+function normalizeForMatch(s) {
+  return (s || '').toLowerCase().normalize('NFKC').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Hər tələbin "source_excerpt"-inin FAKTIKI olaraq sənəd mətnində mövcud
+ * olduğunu yoxlayır. Bu, prompt-a etibar etmək əvəzinə texniki zəmanətdir —
+ * AI hüquqi kontekstdən (və ya başqa xarici mənbədən) tələb "çıxarıb" onu
+ * sənəddən sitat kimi göstərsə belə, bu yoxlama onu tutur və atır.
+ */
+function verifyAndFilterRequirements(requirements, sourceText) {
+  const normalizedSource = normalizeForMatch(sourceText);
+  const verified = [];
+  let droppedCount = 0;
+
+  for (const r of requirements) {
+    const excerpt = normalizeForMatch(r.source_excerpt);
+    if (excerpt.length >= 10 && normalizedSource.includes(excerpt)) {
+      verified.push(r);
+    } else {
+      droppedCount++;
+    }
+  }
+
+  return { verified, droppedCount };
+}
+
 export async function POST(request, { params }) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);
@@ -103,10 +130,14 @@ export async function POST(request, { params }) {
         // Normal mətn əsaslı analiz (Groq) — TPM limitinə görə hissələrə bölünür
         const MAX_CHARS = 8000;
         const chunks = chunkText(extracted.text, MAX_CHARS);
+        let totalDropped = 0;
 
         if (chunks.length === 1) {
           const userPrompt = buildDocumentAnalysisUserPrompt(chunks[0], doc.file_name, tender.jurisdiction);
-          result = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+          const raw = await completeJSON(DOCUMENT_ANALYSIS_SYSTEM_PROMPT, userPrompt);
+          const { verified, droppedCount } = verifyAndFilterRequirements(raw.requirements || [], chunks[0]);
+          totalDropped += droppedCount;
+          result = { ...raw, requirements: verified };
         } else {
           // Bir neçə hissə — ardıcıl analiz edib nəticələri birləşdiririk.
           // Groq-un 30 RPM limitinə hörmət üçün hissələr arası kiçik fasilə.
@@ -122,12 +153,17 @@ export async function POST(request, { params }) {
               merged.language_detected = chunkResult.language_detected;
             }
             if (Array.isArray(chunkResult.requirements)) {
-              merged.requirements.push(...chunkResult.requirements);
+              const { verified, droppedCount } = verifyAndFilterRequirements(chunkResult.requirements, chunks[i]);
+              totalDropped += droppedCount;
+              merged.requirements.push(...verified);
             }
           }
           result = merged;
         }
         aiMeta = AI_META;
+        if (totalDropped > 0) {
+          console.warn(`${totalDropped} tələb source_excerpt yoxlamasından keçmədi və atıldı (docId: ${docId})`);
+        }
       }
     }
 
