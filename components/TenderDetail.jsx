@@ -557,9 +557,9 @@ function PriceSchedule({ tenderId, regId, generatedDocs, onRefresh }) {
       {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
 
       <form onSubmit={handleAddItem} className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4 sm:grid-cols-5">
-        <input className="input col-span-2 sm:col-span-2" placeholder="Təsvir" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-        <input className="input" placeholder="Ölçü" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
-        <input type="number" className="input" placeholder="Miqdar" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
+        <input className="input w-full col-span-2 sm:col-span-2" placeholder="Təsvir" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+        <input className="input w-full" placeholder="Ölçü" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
+        <input type="number" className="input w-full" placeholder="Miqdar" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} />
         <button type="submit" className="rounded-lg bg-neutral-700 px-2 py-2 text-xs font-medium text-white">+ Sətir</button>
       </form>
 
@@ -568,20 +568,26 @@ function PriceSchedule({ tenderId, regId, generatedDocs, onRefresh }) {
       {items.length > 0 && (
         <div className="space-y-1.5">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 p-2.5 text-xs">
-              <span className="w-5 shrink-0 text-neutral-500">{item.item_no}</span>
-              <span className="flex-1 truncate">{item.description}</span>
-              <span className="w-14 shrink-0 text-neutral-500">{item.unit}</span>
-              <span className="w-10 shrink-0 text-neutral-500">×{item.quantity}</span>
-              <input
-                type="number"
-                defaultValue={item.unit_price ?? ''}
-                placeholder="qiymət"
-                onBlur={(e) => handleUpdatePrice(item.id, e.target.value)}
-                className="input w-20 shrink-0 py-1 text-xs"
-              />
-              {item.matched_product_id && <span className="shrink-0 text-[10px] text-emerald-400" title="Kataloqdan təklif olunub">📋</span>}
-              <button onClick={() => handleDeleteItem(item.id)} className="shrink-0 text-red-400">✕</button>
+            <div key={item.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-2.5 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-start gap-2">
+                  <span className="shrink-0 text-neutral-500">{item.item_no}.</span>
+                  <span className="min-w-0 break-words">{item.description}</span>
+                </div>
+                <button onClick={() => handleDeleteItem(item.id)} className="shrink-0 text-red-400">✕</button>
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <span className="shrink-0 text-neutral-500">{item.unit}</span>
+                <span className="shrink-0 text-neutral-500">× {item.quantity}</span>
+                <input
+                  type="number"
+                  defaultValue={item.unit_price ?? ''}
+                  placeholder="qiymət"
+                  onBlur={(e) => handleUpdatePrice(item.id, e.target.value)}
+                  className="input w-24 shrink-0 py-1 text-xs"
+                />
+                {item.matched_product_id && <span className="shrink-0 text-[10px] text-emerald-400" title="Kataloqdan təklif olunub">📋</span>}
+              </div>
             </div>
           ))}
           <div className="flex items-center justify-between rounded-lg bg-neutral-900 p-3">

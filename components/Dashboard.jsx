@@ -98,19 +98,19 @@ export default function Dashboard() {
         {showCreate && (
           <form onSubmit={handleCreate} className="mb-6 space-y-3 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
             <input
-              className="input"
+              className="input w-full"
               placeholder="Tender adı"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
             <input
-              className="input"
+              className="input w-full"
               placeholder="Təşkilat (opsional)"
               value={form.organization}
               onChange={(e) => setForm((f) => ({ ...f, organization: e.target.value }))}
             />
             <input
-              className="input"
+              className="input w-full"
               type="date"
               value={form.deadline}
               onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
@@ -118,7 +118,7 @@ export default function Dashboard() {
             <div>
               <label className="mb-1.5 block text-sm text-neutral-300">Yurisdiksiya</label>
               <select
-                className="input"
+                className="input w-full"
                 value={form.jurisdiction}
                 onChange={(e) => setForm((f) => ({ ...f, jurisdiction: e.target.value }))}
               >

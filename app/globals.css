@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 .input {
-  width: 100%;
   border-radius: 0.5rem;
   border: 1px solid rgb(38 38 38);
   background: rgb(23 23 23);
@@ -9,6 +8,7 @@
   font-size: 0.875rem;
   color: rgb(245 245 245);
   outline: none;
+  min-width: 0; /* flex/grid konteynerlərdə daşmanın qarşısını alır */
 }
 
 .input:focus {

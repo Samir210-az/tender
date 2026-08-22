@@ -153,41 +153,41 @@ export default function CompanyProfile() {
           <h2 className="mb-4 text-lg font-medium">Əsas məlumatlar</h2>
           <div className="space-y-3">
             <Field label="Hüquqi ad">
-              <input className="input" value={profile.legal_name || ''} onChange={(e) => handleProfileChange('legal_name', e.target.value)} />
+              <input className="input w-full" value={profile.legal_name || ''} onChange={(e) => handleProfileChange('legal_name', e.target.value)} />
             </Field>
             <Field label="VÖEN">
-              <input className="input" value={profile.voen || ''} onChange={(e) => handleProfileChange('voen', e.target.value)} />
+              <input className="input w-full" value={profile.voen || ''} onChange={(e) => handleProfileChange('voen', e.target.value)} />
             </Field>
             <Field label="Hüquqi ünvan">
-              <input className="input" value={profile.legal_address || ''} onChange={(e) => handleProfileChange('legal_address', e.target.value)} />
+              <input className="input w-full" value={profile.legal_address || ''} onChange={(e) => handleProfileChange('legal_address', e.target.value)} />
             </Field>
             <Field label="Fəaliyyət sahələri">
-              <input className="input" placeholder="məs. İKT, tikinti" value={profile.sectors || ''} onChange={(e) => handleProfileChange('sectors', e.target.value)} />
+              <input className="input w-full" placeholder="məs. İKT, tikinti" value={profile.sectors || ''} onChange={(e) => handleProfileChange('sectors', e.target.value)} />
             </Field>
             <Field label="Şirkət haqqında">
-              <textarea className="input" rows={3} value={profile.description || ''} onChange={(e) => handleProfileChange('description', e.target.value)} />
+              <textarea className="input w-full" rows={3} value={profile.description || ''} onChange={(e) => handleProfileChange('description', e.target.value)} />
             </Field>
             <Field label="İşçi sayı">
-              <input type="number" className="input" value={profile.employee_count || ''} onChange={(e) => handleProfileChange('employee_count', e.target.value ? parseInt(e.target.value) : null)} />
+              <input type="number" className="input w-full" value={profile.employee_count || ''} onChange={(e) => handleProfileChange('employee_count', e.target.value ? parseInt(e.target.value) : null)} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Dövriyyə (son il)">
-                <input type="number" className="input" placeholder="AZN" value={profile.turnover_year1 || ''} onChange={(e) => handleProfileChange('turnover_year1', e.target.value ? parseFloat(e.target.value) : null)} />
+                <input type="number" className="input w-full" placeholder="AZN" value={profile.turnover_year1 || ''} onChange={(e) => handleProfileChange('turnover_year1', e.target.value ? parseFloat(e.target.value) : null)} />
               </Field>
               <Field label="İl">
-                <input className="input" placeholder="2025" value={profile.turnover_year1_label || ''} onChange={(e) => handleProfileChange('turnover_year1_label', e.target.value)} />
+                <input className="input w-full" placeholder="2025" value={profile.turnover_year1_label || ''} onChange={(e) => handleProfileChange('turnover_year1_label', e.target.value)} />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Dövriyyə (əvvəlki il)">
-                <input type="number" className="input" placeholder="AZN" value={profile.turnover_year2 || ''} onChange={(e) => handleProfileChange('turnover_year2', e.target.value ? parseFloat(e.target.value) : null)} />
+                <input type="number" className="input w-full" placeholder="AZN" value={profile.turnover_year2 || ''} onChange={(e) => handleProfileChange('turnover_year2', e.target.value ? parseFloat(e.target.value) : null)} />
               </Field>
               <Field label="İl">
-                <input className="input" placeholder="2024" value={profile.turnover_year2_label || ''} onChange={(e) => handleProfileChange('turnover_year2_label', e.target.value)} />
+                <input className="input w-full" placeholder="2024" value={profile.turnover_year2_label || ''} onChange={(e) => handleProfileChange('turnover_year2_label', e.target.value)} />
               </Field>
             </div>
             <Field label="Sənəd yazı üslubu (AI-nin hazırladığı sənədlər üçün)">
-              <select className="input" value={profile.writing_tone || 'formal'} onChange={(e) => handleProfileChange('writing_tone', e.target.value)}>
+              <select className="input w-full" value={profile.writing_tone || 'formal'} onChange={(e) => handleProfileChange('writing_tone', e.target.value)}>
                 <option value="formal">Rəsmi</option>
                 <option value="technical">Texniki</option>
                 <option value="concise">Qısa</option>
@@ -195,10 +195,10 @@ export default function CompanyProfile() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="İmzalayan şəxs (ad, soyad)">
-                <input className="input" placeholder="məs. Əli Vəliyev" value={profile.authorized_rep_name || ''} onChange={(e) => handleProfileChange('authorized_rep_name', e.target.value)} />
+                <input className="input w-full" placeholder="məs. Əli Vəliyev" value={profile.authorized_rep_name || ''} onChange={(e) => handleProfileChange('authorized_rep_name', e.target.value)} />
               </Field>
               <Field label="Vəzifəsi">
-                <input className="input" placeholder="məs. Direktor" value={profile.authorized_rep_position || ''} onChange={(e) => handleProfileChange('authorized_rep_position', e.target.value)} />
+                <input className="input w-full" placeholder="məs. Direktor" value={profile.authorized_rep_position || ''} onChange={(e) => handleProfileChange('authorized_rep_position', e.target.value)} />
               </Field>
             </div>
             <p className="text-[11px] text-neutral-500">
@@ -224,14 +224,14 @@ export default function CompanyProfile() {
 
           {showProjectForm && (
             <form onSubmit={handleAddProject} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-              <input className="input" placeholder="Layihə adı" value={projectForm.project_name} onChange={(e) => setProjectForm((f) => ({ ...f, project_name: e.target.value }))} />
-              <input className="input" placeholder="Müştəri" value={projectForm.client_name} onChange={(e) => setProjectForm((f) => ({ ...f, client_name: e.target.value }))} />
-              <input type="number" className="input" placeholder="Müqavilə dəyəri (AZN)" value={projectForm.contract_value} onChange={(e) => setProjectForm((f) => ({ ...f, contract_value: e.target.value }))} />
+              <input className="input w-full" placeholder="Layihə adı" value={projectForm.project_name} onChange={(e) => setProjectForm((f) => ({ ...f, project_name: e.target.value }))} />
+              <input className="input w-full" placeholder="Müştəri" value={projectForm.client_name} onChange={(e) => setProjectForm((f) => ({ ...f, client_name: e.target.value }))} />
+              <input type="number" className="input w-full" placeholder="Müqavilə dəyəri (AZN)" value={projectForm.contract_value} onChange={(e) => setProjectForm((f) => ({ ...f, contract_value: e.target.value }))} />
               <div className="grid grid-cols-2 gap-2">
-                <input type="date" className="input" value={projectForm.start_date} onChange={(e) => setProjectForm((f) => ({ ...f, start_date: e.target.value }))} />
-                <input type="date" className="input" value={projectForm.end_date} onChange={(e) => setProjectForm((f) => ({ ...f, end_date: e.target.value }))} />
+                <input type="date" className="input w-full" value={projectForm.start_date} onChange={(e) => setProjectForm((f) => ({ ...f, start_date: e.target.value }))} />
+                <input type="date" className="input w-full" value={projectForm.end_date} onChange={(e) => setProjectForm((f) => ({ ...f, end_date: e.target.value }))} />
               </div>
-              <textarea className="input" rows={2} placeholder="Təsvir" value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} />
+              <textarea className="input w-full" rows={2} placeholder="Təsvir" value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} />
               <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>
             </form>
           )}
@@ -254,7 +254,7 @@ export default function CompanyProfile() {
         <section>
           <h2 className="mb-3 text-lg font-medium">Sənədlər</h2>
           <div className="mb-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-900 p-5">
-            <select className="input mb-3" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
+            <select className="input w-full mb-3" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
               {Object.entries(DOC_CATEGORY_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -262,7 +262,7 @@ export default function CompanyProfile() {
             {(uploadCategory === 'certificate' || uploadCategory === 'license') && (
               <div className="mb-3">
                 <label className="mb-1 block text-xs text-neutral-400">Bitmə tarixi (opsional)</label>
-                <input type="date" className="input" value={uploadExpiry} onChange={(e) => setUploadExpiry(e.target.value)} />
+                <input type="date" className="input w-full" value={uploadExpiry} onChange={(e) => setUploadExpiry(e.target.value)} />
               </div>
             )}
             <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" id="company-file-upload" />
@@ -342,10 +342,10 @@ function ProductCatalog({ regId }) {
 
       {showForm && (
         <form onSubmit={handleAdd} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <input className="input" placeholder="Məhsul/xidmət adı" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input className="input w-full" placeholder="Məhsul/xidmət adı" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           <div className="grid grid-cols-2 gap-2">
-            <input className="input" placeholder="Ölçü vahidi (ədəd, m², saat...)" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
-            <input type="number" className="input" placeholder="Vahid qiyməti (AZN)" value={form.unit_price} onChange={(e) => setForm((f) => ({ ...f, unit_price: e.target.value }))} />
+            <input className="input w-full" placeholder="Ölçü vahidi (ədəd, m², saat...)" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
+            <input type="number" className="input w-full" placeholder="Vahid qiyməti (AZN)" value={form.unit_price} onChange={(e) => setForm((f) => ({ ...f, unit_price: e.target.value }))} />
           </div>
           <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>
         </form>

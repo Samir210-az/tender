@@ -89,7 +89,7 @@ export default function RegistrationGate({ children }) {
 
         <Field label="Şirkət adı">
           <input
-            className="input"
+            className="input w-full"
             value={form.companyName}
             onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
           />
@@ -97,7 +97,7 @@ export default function RegistrationGate({ children }) {
 
         <Field label="Telefon">
           <input
-            className="input"
+            className="input w-full"
             placeholder="+994 XX XXX XX XX"
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -106,7 +106,7 @@ export default function RegistrationGate({ children }) {
 
         <Field label="PIN (min 4 rəqəm)">
           <input
-            className="input"
+            className="input w-full"
             type="password"
             inputMode="numeric"
             value={form.pin}
