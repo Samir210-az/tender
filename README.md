@@ -10,7 +10,11 @@ Tender sənədlərinin AI ilə analizi, şirkət məlumat bazası ilə uyğunluq
 - Aylıq/illik abunə, avtomatik expiry
 - Admin panel (`/admin`) — server-side API route (service_role), PIN-header autentifikasiya, təsdiq/rədd/uzatma
 
-**Faza 2 — Tender upload + AI analiz** (növbədə)**Faza 3 — Compliance matrix + Company Knowledge Base** (növbədə)
+**Faza 2 — Tender upload + AI analiz** (davam edir)
+- Tender yaratma (ad, təşkilat, son tarix)
+- Çoxfayllı sənəd yükləmə (Supabase Storage, private bucket)
+- Bütün giriş server-side API route-lar vasitəsilə (service_role), aktiv abunə yoxlanışı ilə
+- Növbəti: OCR + AI classification/requirement extraction (ANTHROPIC_API_KEY lazımdır)**Faza 3 — Compliance matrix + Company Knowledge Base** (növbədə)
 **Faza 4 — Proposal generator + export** (növbədə)
 
 ## Local development
