@@ -4,11 +4,17 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireActiveRegistration } from '@/lib/requireActiveRegistration';
 import { completeJSON } from '@/lib/ai/provider';
 import { buildCompanyContext } from '@/lib/prompts/compliance';
+import { generateProposalPdf } from '@/lib/generatePdf';
 import {
   PROPOSAL_SYSTEM_PROMPT,
   buildProposalUserPrompt,
   PROPOSAL_PROMPT_VERSION,
 } from '@/lib/prompts/proposalGeneration';
+import {
+  VERIFICATION_SYSTEM_PROMPT,
+  buildVerificationUserPrompt,
+  VERIFICATION_PROMPT_VERSION,
+} from '@/lib/prompts/finalVerification';
 
 export const maxDuration = 120;
 
@@ -19,6 +25,12 @@ const REQ_CATEGORY_LABELS = {
 const STATUS_LABELS = {
   compliant: 'Uyğundur', partially_compliant: 'Qismən uyğun', non_compliant: 'Uyğun deyil',
   missing: 'Məlumat yoxdur', not_applicable: 'Aidiyyatı yoxdur', needs_review: 'Yoxlanılmalıdır',
+};
+const SECTION_HEADINGS = {
+  cover_letter: 'Örtük Məktubu',
+  company_introduction: 'Şirkət Təqdimatı',
+  compliance_statement: 'Uyğunluq Bəyanatı',
+  closing: 'Nəticə',
 };
 
 export async function POST(request, { params }) {
@@ -70,6 +82,7 @@ export async function POST(request, { params }) {
     })
     .join('\n\n');
 
+  // 1. Proposal mətnini generasiya et
   let aiResult;
   try {
     const systemPrompt = PROPOSAL_SYSTEM_PROMPT(profile.writing_tone || 'formal');
@@ -81,17 +94,40 @@ export async function POST(request, { params }) {
       standardIntro: profile.standard_intro,
       standardConclusion: profile.standard_conclusion,
     });
-    // Yaradıcı yazı üçün daha yüksək temperature (0.5) — hər generasiyada
-    // fərqli cümlə strukturu/frazeologiya, robotik təkrar olmasın. Faktlar
-    // yenə də yalnız COMPANY DATA-dan gəlir (temperature bunu dəyişmir,
-    // yalnız ifadə tərzini) — prompt-dakı qadağalar sabit qalır.
     aiResult = await completeJSON(systemPrompt, userPrompt, { temperature: 0.5 });
   } catch (err) {
     return NextResponse.json({ error: `Mətn generasiyası xətası: ${err.message}` }, { status: 500 });
   }
 
-  // DOCX qurulması
-  const doc = new Document({
+  const sections = {
+    cover_letter: aiResult.cover_letter || '',
+    company_introduction: aiResult.company_introduction || '',
+    compliance_statement: aiResult.compliance_statement || '',
+    closing: aiResult.closing || '',
+  };
+
+  // 2. Final Verification — ikinci AI keçidi, mətni COMPANY DATA ilə tutuşdurur
+  let verificationStatus = 'not_verified';
+  let verificationIssues = null;
+  try {
+    await new Promise((r) => setTimeout(r, 2200)); // Groq RPM limitinə hörmət
+    const verifyUserPrompt = buildVerificationUserPrompt({
+      tenderName: tender.name,
+      sections,
+      companyContext,
+    });
+    const verifyResult = await completeJSON(VERIFICATION_SYSTEM_PROMPT, verifyUserPrompt, { temperature: 0.1 });
+    verificationIssues = verifyResult.issues || [];
+    const hasCritical = verificationIssues.some((i) => i.severity === 'critical');
+    verificationStatus = verificationIssues.length === 0 ? 'passed' : 'issues_found';
+    if (hasCritical) verificationStatus = 'issues_found';
+  } catch (err) {
+    // Verification uğursuz olsa belə, sənəd hazırdır — sadəcə "not_verified" qalır
+    console.warn(`Final verification xətası (docId hələ yaranmayıb): ${err.message}`);
+  }
+
+  // 3. DOCX qurulması
+  const docxDoc = new Document({
     sections: [{
       children: [
         new Paragraph({
@@ -100,49 +136,72 @@ export async function POST(request, { params }) {
         }),
         new Paragraph({ text: 'TEXNİKİ TƏKLİF', heading: HeadingLevel.TITLE, spacing: { after: 100 } }),
         new Paragraph({ text: tender.name, heading: HeadingLevel.HEADING_2, spacing: { after: 300 } }),
-
-        new Paragraph({ text: 'Örtük Məktubu', heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
-        ...textToParagraphs(aiResult.cover_letter),
-
-        new Paragraph({ text: 'Şirkət Təqdimatı', heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
-        ...textToParagraphs(aiResult.company_introduction),
-
-        new Paragraph({ text: 'Uyğunluq Bəyanatı', heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
-        ...textToParagraphs(aiResult.compliance_statement),
-
-        new Paragraph({ text: 'Nəticə', heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
-        ...textToParagraphs(aiResult.closing),
+        ...Object.entries(sections).flatMap(([key, text]) => [
+          new Paragraph({ text: SECTION_HEADINGS[key], heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
+          ...textToParagraphs(text),
+        ]),
       ],
     }],
   });
+  const docxBuffer = await Packer.toBuffer(docxDoc);
+  const docxFileName = `Texniki-Teklif-${Date.now()}.docx`;
+  const docxPath = `${tenderId}/${docxFileName}`;
 
-  const buffer = await Packer.toBuffer(doc);
-  const fileName = `Texniki-Teklif-${Date.now()}.docx`;
-  const storagePath = `${tenderId}/${fileName}`;
-
-  const { error: uploadErr } = await db.storage
+  const { error: docxUploadErr } = await db.storage
     .from('generated-documents')
-    .upload(storagePath, buffer, {
+    .upload(docxPath, docxBuffer, {
       contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     });
-  if (uploadErr) return NextResponse.json({ error: `Storage xətası: ${uploadErr.message}` }, { status: 500 });
+  if (docxUploadErr) return NextResponse.json({ error: `DOCX Storage xətası: ${docxUploadErr.message}` }, { status: 500 });
 
+  // 4. PDF qurulması
+  let pdfPath = null;
+  let pdfFileName = null;
+  try {
+    const pdfBuffer = await generateProposalPdf({
+      tenderName: tender.name,
+      sections: Object.entries(sections).map(([key, text]) => ({ heading: SECTION_HEADINGS[key], text })),
+    });
+    pdfFileName = `Texniki-Teklif-${Date.now()}.pdf`;
+    pdfPath = `${tenderId}/${pdfFileName}`;
+    const { error: pdfUploadErr } = await db.storage
+      .from('generated-documents')
+      .upload(pdfPath, pdfBuffer, { contentType: 'application/pdf' });
+    if (pdfUploadErr) {
+      console.warn(`PDF Storage xətası: ${pdfUploadErr.message}`);
+      pdfPath = null;
+      pdfFileName = null;
+    }
+  } catch (err) {
+    console.warn(`PDF generasiya xətası: ${err.message}`);
+  }
+
+  // 5. DB-yə yaz
   const { data: docRow, error: dbErr } = await db
     .from('generated_documents')
     .insert({
       tender_id: tenderId,
       registration_id: regId,
       doc_type: 'technical_proposal',
-      file_path: storagePath,
-      file_name: fileName,
+      file_path: docxPath,
+      file_name: docxFileName,
+      file_path_pdf: pdfPath,
+      file_name_pdf: pdfFileName,
       ai_provider: 'groq',
       ai_model: 'openai/gpt-oss-120b',
+      verification_status: verificationStatus,
+      verification_issues: verificationIssues,
+      verified_at: verificationStatus !== 'not_verified' ? new Date().toISOString() : null,
     })
     .select('*')
     .single();
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
 
-  return NextResponse.json({ document: docRow, promptVersion: PROPOSAL_PROMPT_VERSION });
+  return NextResponse.json({
+    document: docRow,
+    promptVersion: PROPOSAL_PROMPT_VERSION,
+    verificationPromptVersion: VERIFICATION_PROMPT_VERSION,
+  });
 }
 
 function textToParagraphs(text) {

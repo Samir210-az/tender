@@ -317,29 +317,46 @@ export default function TenderDetail({ tenderId }) {
               </button>
             </div>
             <p className="mb-3 text-xs text-neutral-500">
-              Şirkət profili və compliance nəticələri əsasında Texniki Təklif sənədi hazırlanır (DOCX).
+              Şirkət profili və uyğunluq nəticələri əsasında Texniki Təklif sənədi hazırlanır (DOCX + PDF), sonra ikinci AI keçidi ilə yoxlanılır.
             </p>
 
             {generatedDocs.length > 0 && (
               <div className="space-y-2">
                 {generatedDocs.map((doc) => (
                   <div key={doc.id} className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{doc.file_name}</p>
                         <p className="text-xs text-neutral-500">
                           {new Date(doc.created_at).toLocaleString('az-AZ')}
                         </p>
+                        <VerificationBadge status={doc.verification_status} issues={doc.verification_issues} />
                       </div>
-                      {doc.download_url && (
-                        <a
-                          href={doc.download_url}
-                          className="shrink-0 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white"
-                        >
-                          Endir
-                        </a>
-                      )}
+                      <div className="flex shrink-0 gap-1.5">
+                        {doc.download_url && (
+                          <a href={doc.download_url} className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white">
+                            DOCX
+                          </a>
+                        )}
+                        {doc.download_url_pdf && (
+                          <a href={doc.download_url_pdf} className="rounded-lg bg-purple-700 px-3 py-1.5 text-xs font-medium text-white">
+                            PDF
+                          </a>
+                        )}
+                      </div>
                     </div>
+
+                    {doc.verification_issues && doc.verification_issues.length > 0 && (
+                      <div className="mt-2 space-y-1 border-t border-purple-500/20 pt-2">
+                        {doc.verification_issues.map((issue, i) => (
+                          <p key={i} className="text-[11px] text-neutral-400">
+                            <IssueSeverityTag severity={issue.severity} /> {issue.description}
+                            {issue.location && <span className="text-neutral-600"> ({issue.location})</span>}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="mt-2 text-[11px] text-amber-400">
                       ⚠ AI tərəfindən yaradılıb — təqdim etməzdən əvvəl mütləq yoxlayın və təsdiqləyin.
                     </p>
@@ -352,6 +369,32 @@ export default function TenderDetail({ tenderId }) {
       </div>
     </main>
   );
+}
+
+function VerificationBadge({ status, issues }) {
+  if (!status || status === 'not_verified') {
+    return <p className="mt-0.5 text-[11px] text-neutral-500">Yoxlanılmayıb</p>;
+  }
+  if (status === 'passed') {
+    return <p className="mt-0.5 text-[11px] text-emerald-400">✓ Final yoxlamadan keçdi, problem tapılmadı</p>;
+  }
+  const criticalCount = (issues || []).filter((i) => i.severity === 'critical').length;
+  return (
+    <p className="mt-0.5 text-[11px] text-amber-400">
+      ⚠ {issues?.length || 0} qeyd tapıldı{criticalCount > 0 ? ` (${criticalCount} kritik)` : ''}
+    </p>
+  );
+}
+
+function IssueSeverityTag({ severity }) {
+  const map = {
+    critical: ['KRİTİK', 'text-red-400'],
+    high: ['YÜKSƏK', 'text-orange-400'],
+    medium: ['ORTA', 'text-amber-400'],
+    low: ['AŞAĞI', 'text-neutral-500'],
+  };
+  const [label, cls] = map[severity] || [severity, 'text-neutral-500'];
+  return <span className={`font-semibold ${cls}`}>[{label}]</span>;
 }
 
 function DeadlineCountdown({ deadline }) {

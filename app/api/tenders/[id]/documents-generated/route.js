@@ -20,10 +20,17 @@ export async function GET(request, { params }) {
 
   const withUrls = await Promise.all(
     (docs || []).map(async (d) => {
-      const { data: signed } = await db.storage
+      const { data: signedDocx } = await db.storage
         .from('generated-documents')
         .createSignedUrl(d.file_path, 3600); // 1 saat etibarlı
-      return { ...d, download_url: signed?.signedUrl || null };
+      let pdfUrl = null;
+      if (d.file_path_pdf) {
+        const { data: signedPdf } = await db.storage
+          .from('generated-documents')
+          .createSignedUrl(d.file_path_pdf, 3600);
+        pdfUrl = signedPdf?.signedUrl || null;
+      }
+      return { ...d, download_url: signedDocx?.signedUrl || null, download_url_pdf: pdfUrl };
     })
   );
 

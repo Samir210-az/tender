@@ -69,3 +69,8 @@ npm run dev
 - `lib/riskEngine.js` — tamamilə deterministik (AI çağırışı yoxdur), şəffaf qaydalarla risk səviyyəsi: CRITICAL/HIGH/MEDIUM/LOW
 - "Tenderə qatılaqmı?" paneli — BƏLİ/NƏZƏRDƏN KEÇİR/YOX tövsiyəsi, səbəblərlə
 - Açıq qeyd: "qərar-dəstək vasitəsidir, zəmanət deyil" (spesifikasiya, 45-ci bənd)
+
+**PDF Export + Final Verification Engine** (tamamlandı)
+- "Hazırla" indi həm DOCX, həm PDF yaradır (pdfkit + DejaVu Sans TTF — Azərbaycan hərfləri üçün test edilib doğrulanıb, npm-in woff/woff2 font paketləri fontkit ilə sınıq render olunduğu üçün əsl TTF istifadə olunur)
+- Final Verification: ikinci AI keçidi generasiya olunan mətni COMPANY DATA ilə tutuşdurur — UNSUPPORTED_CLAIM/WRONG_NUMBER/WRONG_DATE/MISSING_SECTION/INCONSISTENT_TERMINOLOGY/FORMATTING_ISSUE kateqoriyaları üzrə, severity (critical/high/medium/low) ilə
+- Vercel file-tracing üçün ehtiyat tədbiri: `createRequire` + `outputFileTracingIncludes` (font faylının serverless bundle-a düşməsini təmin edir)
