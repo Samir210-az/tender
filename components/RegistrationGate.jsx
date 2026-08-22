@@ -12,7 +12,7 @@ const PLANS = [
 ];
 
 export default function RegistrationGate({ children }) {
-  const { status, subscription, register } = useSubscription();
+  const { status, subscription, register, logout } = useSubscription();
   const [form, setForm] = useState({ companyName: '', phone: '', pin: '', plan: 'monthly' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -31,6 +31,7 @@ export default function RegistrationGate({ children }) {
         title="Qeydiyyat göndərildi"
         message="Ödəniş təsdiqləndikdən sonra hesabınız aktivləşdiriləcək."
         showWhatsApp
+        onLogout={logout}
       />
     );
   }
@@ -41,6 +42,7 @@ export default function RegistrationGate({ children }) {
         title="Abunəlik müddəti bitib"
         message="Yeniləmək üçün əlaqə saxlayın."
         showWhatsApp
+        onLogout={logout}
       />
     );
   }
@@ -51,6 +53,7 @@ export default function RegistrationGate({ children }) {
         title="Qeydiyyat təsdiqlənmədi"
         message="Ətraflı məlumat üçün əlaqə saxlayın."
         showWhatsApp
+        onLogout={logout}
       />
     );
   }
@@ -154,7 +157,7 @@ function Field({ label, children }) {
   );
 }
 
-function FullScreenState({ title, message, showWhatsApp }) {
+function FullScreenState({ title, message, showWhatsApp, onLogout }) {
   const waLink = `https://wa.me/${WHATSAPP_NUMBER}`;
 
   return (
@@ -173,6 +176,15 @@ function FullScreenState({ title, message, showWhatsApp }) {
             <WhatsAppIcon />
             Əlaqə saxla
           </a>
+        )}
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="mt-4 text-sm text-neutral-500 hover:text-neutral-300"
+          >
+            Çıxış
+          </button>
         )}
       </div>
       <Footer />
