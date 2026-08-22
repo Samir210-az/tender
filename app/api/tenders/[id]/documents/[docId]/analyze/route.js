@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireActiveRegistration } from '@/lib/requireActiveRegistration';
 import { extractText } from '@/lib/ai/textExtraction';
+import { parseAzDate } from '@/lib/ai/parseDate';
 import { completeJSON, AI_META } from '@/lib/ai/provider';
 import {
   DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
@@ -91,20 +92,24 @@ export async function POST(request, { params }) {
     await db.from('tender_requirements').delete().eq('document_id', docId);
 
     if (result.requirements.length > 0) {
-      const rows = result.requirements.map((r) => ({
-        tender_id: tenderId,
-        document_id: docId,
-        title: r.title || 'Başlıqsız tələb',
-        description: r.description || null,
-        category: r.category || null,
-        mandatory: r.mandatory !== false,
-        deadline: r.deadline || null,
-        source_excerpt: r.source_excerpt || null,
-        source_page: r.source_page || null,
-        confidence: r.confidence || 'low',
-        ai_provider: AI_META.provider,
-        ai_model: AI_META.model,
-      }));
+      const rows = result.requirements.map((r) => {
+        const parsedDeadline = r.deadline ? parseAzDate(r.deadline) : null;
+        return {
+          tender_id: tenderId,
+          document_id: docId,
+          title: r.title || 'Başlıqsız tələb',
+          description: r.description || null,
+          category: r.category || null,
+          mandatory: r.mandatory !== false,
+          deadline: parsedDeadline, // parse olunmayıbsa null — heç vaxt uydurma
+          deadline_raw: r.deadline || null, // orijinal mətn HƏMİŞƏ saxlanılır
+          source_excerpt: r.source_excerpt || null,
+          source_page: r.source_page || null,
+          confidence: r.confidence || 'low',
+          ai_provider: AI_META.provider,
+          ai_model: AI_META.model,
+        };
+      });
       const { error: insertErr } = await db.from('tender_requirements').insert(rows);
       if (insertErr) throw new Error(`Requirements yazıla bilmədi: ${insertErr.message}`);
     }

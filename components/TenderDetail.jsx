@@ -214,6 +214,11 @@ export default function TenderDetail({ tenderId }) {
                           {req.source_page && ` — səhifə ${req.source_page}`}
                         </p>
                       )}
+                      {(req.deadline || req.deadline_raw) && (
+                        <p className="mt-1 text-xs text-amber-400">
+                          Son tarix: {req.deadline ? new Date(req.deadline).toLocaleString('az-AZ') : req.deadline_raw}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
