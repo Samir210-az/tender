@@ -83,3 +83,9 @@ npm run dev
 - "ZIP hazırla" — ən son Texniki Təklif (FORMA 1) + ən son Maliyyə Təklifi (FORMA 2) sənədlərini (DOCX+PDF) bir ZIP faylında birləşdirir
 - Paketə avtomatik "OXU-XƏBƏRDARLIQ.txt" əlavə olunur (AI-generated xəbərdarlığı bir daha)
 - Yalnız mövcud sənədlərdən istifadə edir — hər hansı biri hazırlanmayıbsa, xəbərdarlıq göstərir, mövcud olanla davam edir
+
+### FORMA 2 dəqiqləşdirilməsi
+- Real dövlət sənədi tam açılıb yoxlanıldı (nk.gov.az, NK Qərarı № 503, 1 nömrəli əlavə, IV Bölmə, FORMA 2 "İş həcmləri cədvəli")
+- Rəsmi "A. Preambula" bölməsi (5 sabit hüquqi bənd) əlavə olundu — deterministik, AI yazmır
+- Sütun başlığı "№" → "Maddə №" (rəsmi terminə tam uyğun)
+- Başlıq "FORMA 2 — İş həcmləri cədvəli (Qiymət cədvəli)" — həm işlər (İş həcmləri cədvəli), həm mallar (Qiymət cədvəli) üçün rəsmi adları əhatə edir

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireActiveRegistration } from '@/lib/requireActiveRegistration';
-import { buildAddresseeLines, buildSignatureLines } from '@/lib/letterhead';
+import { buildAddresseeLines, buildSignatureLines, buildFormaTwoPreamble } from '@/lib/letterhead';
 import { generatePriceSchedulePdf } from '@/lib/generatePriceSchedulePdf';
 
 export const maxDuration = 60;
@@ -51,7 +51,7 @@ export async function POST(request, { params }) {
   // DOCX
   const tableRows = [
     new TableRow({
-      children: ['№', 'Təsvir', 'Ölçü vahidi', 'Miqdar', 'Vahidin qiyməti', 'Cəm'].map(
+      children: ['Maddə №', 'Təsvir', 'Ölçü vahidi', 'Miqdar', 'Vahidin qiyməti', 'Cəm'].map(
         (h) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })] })
       ),
     }),
@@ -71,10 +71,14 @@ export async function POST(request, { params }) {
           children: [new TextRun({ text: 'TƏQDİM ETMƏZDƏN ƏVVƏL MÜTLƏQ YOXLAYIN — QİYMƏTLƏR ŞİRKƏTİN ÖZ MƏLUMAT BAZASINDAN GƏLİR, AI TƏRƏFİNDƏN UYDURULMAYIB', bold: true, color: 'C0392B', size: 16 })],
           spacing: { after: 300 },
         }),
-        new Paragraph({ text: 'FORMA 2 — QİYMƏT CƏDVƏLİ', heading: HeadingLevel.TITLE, spacing: { after: 100 } }),
+        new Paragraph({ text: 'FORMA 2 — İŞ HƏCMLƏRİ CƏDVƏLİ (QİYMƏT CƏDVƏLİ)', heading: HeadingLevel.TITLE, spacing: { after: 100 } }),
         new Paragraph({ text: tender.name, heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
         ...addresseeLines.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 60 } })),
-        new Paragraph({ text: '', spacing: { after: 200 } }),
+        new Paragraph({ text: '', spacing: { after: 150 } }),
+        new Paragraph({ text: 'A. Preambula', heading: HeadingLevel.HEADING_2, spacing: { after: 100 } }),
+        ...buildFormaTwoPreamble().map((line, i) => new Paragraph({ children: [new TextRun(`${i + 1}. ${line}`)], spacing: { after: 80 } })),
+        new Paragraph({ text: '', spacing: { after: 100 } }),
+        new Paragraph({ text: 'B. İş həcmləri üzrə maddələr', heading: HeadingLevel.HEADING_2, spacing: { after: 150 } }),
         new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } }),
         new Paragraph({ text: '', spacing: { after: 150 } }),
         new Paragraph({
@@ -96,7 +100,15 @@ export async function POST(request, { params }) {
   // PDF
   let pdfPath = null, pdfFileName = null, pdfGenerationError = null;
   try {
-    const pdfBuffer = await generatePriceSchedulePdf({ tenderName: tender.name, addresseeLines, signatureLines, rows, grandTotal, currency });
+    const pdfBuffer = await generatePriceSchedulePdf({
+      tenderName: tender.name,
+      addresseeLines,
+      signatureLines,
+      preamble: buildFormaTwoPreamble(),
+      rows,
+      grandTotal,
+      currency,
+    });
     pdfFileName = `Qiymet-Cedveli-${Date.now()}.pdf`;
     pdfPath = `${tenderId}/${pdfFileName}`;
     const { error: pdfUploadErr } = await db.storage.from('generated-documents').upload(pdfPath, pdfBuffer, { contentType: 'application/pdf' });
