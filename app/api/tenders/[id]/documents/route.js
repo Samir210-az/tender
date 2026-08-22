@@ -26,6 +26,29 @@ async function verifyTenderOwnership(db, tenderId, regId) {
   return !error && !!data;
 }
 
+const AZ_TRANSLIT_MAP = {
+  ə: 'e', Ə: 'E', ğ: 'g', Ğ: 'G', ı: 'i', I: 'I', İ: 'I',
+  ö: 'o', Ö: 'O', ü: 'u', Ü: 'U', ş: 's', Ş: 'S', ç: 'c', Ç: 'C',
+};
+
+function transliterateToAscii(name) {
+  const withoutExt = name.replace(/\.[^.]+$/, '');
+  const ext = name.match(/\.[^.]+$/)?.[0] || '';
+
+  const transliterated = withoutExt
+    .split('')
+    .map((ch) => AZ_TRANSLIT_MAP[ch] ?? ch)
+    .join('');
+
+  const asciiOnly = transliterated
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '') // digər dillərin diakritiklərini təmizlə
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_+/g, '_');
+
+  return `${asciiOnly || 'file'}${ext}`;
+}
+
 export async function POST(request, { params }) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);
@@ -50,7 +73,10 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: `Dəstəklənməyən fayl tipi: ${file.type}` }, { status: 400 });
   }
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9а-яА-Яəğıöüşç._-]/gi, '_');
+  // Supabase Storage key-ləri YALNIZ ASCII qəbul edir (S3-uyğun tələb).
+  // Fayl adının özü (DB-də file_name) tam saxlanılır — yalnız storage
+  // path üçün ASCII-yə transliterasiya edirik.
+  const safeName = transliterateToAscii(file.name);
   const storagePath = `${tenderId}/${Date.now()}-${safeName}`;
 
   const bytes = await file.arrayBuffer();
