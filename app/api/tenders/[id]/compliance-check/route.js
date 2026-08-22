@@ -92,5 +92,63 @@ export async function POST(request, { params }) {
 
   await db.from('tenders').update({ status: 'ready' }).eq('id', tenderId);
 
-  return NextResponse.json({ success: true, totalRequirements: requirements.length, updated });
+  // Tender Readiness Score hesablanması — yalnız mövcud data-dan, əlavə AI
+  // çağırışı olmadan. Şəffaf düstur: kateqoriya üzrə (mandatory) tələblərin
+  // neçə faizi "compliant"-dır.
+  const { data: finalRequirements } = await db
+    .from('tender_requirements')
+    .select('category, mandatory, status')
+    .eq('tender_id', tenderId);
+
+  const { overallScore, breakdown } = computeReadinessScore(finalRequirements || []);
+
+  await db
+    .from('tenders')
+    .update({ readiness_score: overallScore, readiness_breakdown: breakdown })
+    .eq('id', tenderId);
+
+  return NextResponse.json({
+    success: true,
+    totalRequirements: requirements.length,
+    updated,
+    readinessScore: overallScore,
+    readinessBreakdown: breakdown,
+  });
+}
+
+const CATEGORY_LABELS_AZ = {
+  legal: 'Hüquqi', financial: 'Maliyyə', technical: 'Texniki', experience: 'Təcrübə',
+  personnel: 'Personal', equipment: 'Avadanlıq', administrative: 'İnzibati', deadline: 'Son tarix',
+};
+
+/**
+ * Tender Score — şəffaf, deterministik düstur (AI-nin "təsadüfi rəqəmi" deyil):
+ * hər kateqoriya üzrə MƏCBURİ tələblərin neçə faizi "compliant"-dır.
+ * "not_applicable" statuslu tələblər məxrəcdən çıxarılır (aidiyyatı olmayan
+ * tələb hesaba mane olmasın deyə).
+ */
+function computeReadinessScore(requirements) {
+  const mandatoryOnly = requirements.filter((r) => r.mandatory && r.status !== 'not_applicable');
+  if (mandatoryOnly.length === 0) return { overallScore: null, breakdown: null };
+
+  const byCategory = {};
+  for (const r of mandatoryOnly) {
+    const cat = r.category || 'other';
+    if (!byCategory[cat]) byCategory[cat] = { total: 0, compliant: 0 };
+    byCategory[cat].total++;
+    if (r.status === 'compliant') byCategory[cat].compliant++;
+    else if (r.status === 'partially_compliant') byCategory[cat].compliant += 0.5;
+  }
+
+  const breakdown = {};
+  let totalCompliant = 0;
+  let totalCount = 0;
+  for (const [cat, { total, compliant }] of Object.entries(byCategory)) {
+    breakdown[CATEGORY_LABELS_AZ[cat] || cat] = Math.round((compliant / total) * 100);
+    totalCompliant += compliant;
+    totalCount += total;
+  }
+
+  const overallScore = Math.round((totalCompliant / totalCount) * 100);
+  return { overallScore, breakdown };
 }

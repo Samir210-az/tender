@@ -171,6 +171,9 @@ export default function TenderDetail({ tenderId }) {
               Son tarix: {new Date(tender.deadline).toLocaleDateString('az-AZ')}
             </p>
           )}
+          {typeof tender.readiness_score === 'number' && (
+            <ReadinessScoreCard score={tender.readiness_score} breakdown={tender.readiness_breakdown} />
+          )}
         </div>
 
         <div className="mb-6 rounded-xl border border-dashed border-neutral-700 bg-neutral-900 p-6 text-center">
@@ -344,6 +347,37 @@ export default function TenderDetail({ tenderId }) {
         )}
       </div>
     </main>
+  );
+}
+
+function ReadinessScoreCard({ score, breakdown }) {
+  const color = score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
+  return (
+    <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-neutral-400">Tender Readiness</span>
+        <span className={`text-2xl font-bold ${color}`}>{score}%</span>
+      </div>
+      {breakdown && (
+        <div className="mt-3 space-y-1.5">
+          {Object.entries(breakdown).map(([cat, pct]) => (
+            <div key={cat} className="flex items-center gap-2">
+              <span className="w-20 shrink-0 text-xs text-neutral-500">{cat}</span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-800">
+                <div
+                  className={`h-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="w-10 shrink-0 text-right text-xs text-neutral-500">{pct}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-3 text-[11px] text-neutral-600">
+        Düstur: hər kateqoriyada məcburi tələblərin neçə faizi uyğundur (compliance yoxlamasına əsaslanır).
+      </p>
+    </div>
   );
 }
 

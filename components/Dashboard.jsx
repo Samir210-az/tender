@@ -162,6 +162,11 @@ export default function Dashboard() {
                 <div className="flex shrink-0 items-center gap-3">
                   <div className="text-right">
                     <StatusBadge status={t.status} />
+                    {typeof t.readiness_score === 'number' && (
+                      <p className={`mt-0.5 text-xs font-medium ${scoreColorClass(t.readiness_score)}`}>
+                        {t.readiness_score}% hazır
+                      </p>
+                    )}
                     {t.deadline && (
                       <p className="mt-1 text-xs text-neutral-500">
                         {new Date(t.deadline).toLocaleDateString('az-AZ')}
@@ -202,6 +207,12 @@ export default function Dashboard() {
       </div>
     </main>
   );
+}
+
+function scoreColorClass(score) {
+  if (score >= 80) return 'text-emerald-400';
+  if (score >= 50) return 'text-amber-400';
+  return 'text-red-400';
 }
 
 function StatusBadge({ status }) {
