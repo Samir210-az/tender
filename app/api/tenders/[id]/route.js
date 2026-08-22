@@ -42,6 +42,38 @@ export async function GET(request, { params }) {
   return NextResponse.json({ tender, documents });
 }
 
+export async function PATCH(request, { params }) {
+  const regId = request.headers.get('x-registration-id');
+  const check = await requireActiveRegistration(regId);
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+
+  const { id } = await params;
+  const db = getSupabaseAdmin();
+
+  const owns = await verifyTenderOwnership(db, id, regId);
+  if (!owns) return NextResponse.json({ error: 'Tender tapılmadı' }, { status: 404 });
+
+  const body = await request.json();
+  const allowedFields = ['name', 'organization', 'deadline', 'tender_number'];
+  const payload = {};
+  for (const f of allowedFields) {
+    if (f in body) payload[f] = body[f] === '' ? null : body[f];
+  }
+  if (Object.keys(payload).length === 0) {
+    return NextResponse.json({ error: 'Yenilənəcək sahə göndərilməyib' }, { status: 400 });
+  }
+
+  const { data, error } = await db
+    .from('tenders')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ tender: data });
+}
+
 export async function DELETE(request, { params }) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);

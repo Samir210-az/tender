@@ -193,6 +193,17 @@ export default function CompanyProfile() {
                 <option value="concise">Qısa</option>
               </select>
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="İmzalayan şəxs (ad, soyad)">
+                <input className="input" placeholder="məs. Əli Vəliyev" value={profile.authorized_rep_name || ''} onChange={(e) => handleProfileChange('authorized_rep_name', e.target.value)} />
+              </Field>
+              <Field label="Vəzifəsi">
+                <input className="input" placeholder="məs. Direktor" value={profile.authorized_rep_position || ''} onChange={(e) => handleProfileChange('authorized_rep_position', e.target.value)} />
+              </Field>
+            </div>
+            <p className="text-[11px] text-neutral-500">
+              Bu məlumatlar generasiya olunan sənədlərin imza blokunda avtomatik istifadə olunur (rəsmi FORMA 1 tələbinə uyğun — NK Qərarı № 503, 30.12.2023).
+            </p>
           </div>
           <button
             onClick={handleSaveProfile}

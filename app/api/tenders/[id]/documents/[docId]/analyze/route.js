@@ -201,6 +201,21 @@ export async function POST(request, { params }) {
       });
       const { error: insertErr } = await db.from('tender_requirements').insert(rows);
       if (insertErr) throw new Error(`Requirements yazıla bilmədi: ${insertErr.message}`);
+
+      // Bonus: "tender nömrəsi" adlı tələb tapılıbsa və hələ təyin edilməyibsə,
+      // avtomatik doldur (istifadəçi UI-dan istənilən vaxt dəyişə bilər).
+      const numberReq = result.requirements.find((r) =>
+        /tender\s*n[öo]mrə|müsabiqə\s*n[öo]mrə/i.test(r.title || '')
+      );
+      if (numberReq?.source_excerpt) {
+        const { data: currentTender } = await db.from('tenders').select('tender_number').eq('id', tenderId).single();
+        if (currentTender && !currentTender.tender_number) {
+          const match = numberReq.source_excerpt.match(/[:\s]([A-ZƏĞİÖÜŞÇ0-9][A-ZƏĞİÖÜŞÇ0-9\-\/\.]{3,})/i);
+          if (match) {
+            await db.from('tenders').update({ tender_number: match[1].trim() }).eq('id', tenderId);
+          }
+        }
+      }
     }
 
     // 5. Sənəd sətrini yenilə

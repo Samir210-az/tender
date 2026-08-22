@@ -74,3 +74,9 @@ npm run dev
 - "Hazırla" indi həm DOCX, həm PDF yaradır (pdfkit + DejaVu Sans TTF — Azərbaycan hərfləri üçün test edilib doğrulanıb, npm-in woff/woff2 font paketləri fontkit ilə sınıq render olunduğu üçün əsl TTF istifadə olunur)
 - Final Verification: ikinci AI keçidi generasiya olunan mətni COMPANY DATA ilə tutuşdurur — UNSUPPORTED_CLAIM/WRONG_NUMBER/WRONG_DATE/MISSING_SECTION/INCONSISTENT_TERMINOLOGY/FORMATTING_ISSUE kateqoriyaları üzrə, severity (critical/high/medium/low) ilə
 - Vercel file-tracing üçün ehtiyat tədbiri: `createRequire` + `outputFileTracingIncludes` (font faylının serverless bundle-a düşməsini təmin edir)
+
+**Ünvanlayıcı + İmza Bloku** (tamamlandı)
+- Mənbə: Azərbaycan Respublikası Nazirlər Kabinetinin 30.12.2023 tarixli № 503 Qərarı, 1 nömrəli əlavə, IV Bölmə, FORMA 1 (Təklif məktubu) — real dövlət tender sənədindən doğrulanmış struktur
+- Ünvanlayıcı bloku (yuxarıda): təqdim tarixi, tender/müsabiqə nömrəsi (`tenders.tender_number` — tender detail səhifəsində redaktə edilə bilər, sənəd analizindən avtomatik təxmin edilir), "Kimə" (`tenders.organization`)
+- İmza bloku (aşağıda): təchizatçı adı + VÖEN (`company_profiles`-dən), imzalayan şəxsin adı/vəzifəsi (`company_profiles.authorized_rep_name/position` — `/company`-də redaktə edilir), imza xətti, tarix
+- Hər iki blok mövcud sahələrdən avtomatik doldurulur, istənilən vaxt `/company` və ya tender detail səhifəsindən düzəliş edilə bilər — yenidən "Hazırla" edəndə yeni dəyərlərlə generasiya olunur

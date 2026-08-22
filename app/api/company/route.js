@@ -29,6 +29,7 @@ export async function PUT(request) {
     'establishment_date', 'employee_count',
     'turnover_year1', 'turnover_year1_label', 'turnover_year2', 'turnover_year2_label',
     'writing_tone', 'standard_intro', 'standard_conclusion',
+    'authorized_rep_name', 'authorized_rep_position',
   ];
   const payload = { registration_id: regId, updated_at: new Date().toISOString() };
   for (const f of allowedFields) {

@@ -15,6 +15,7 @@ import {
   buildVerificationUserPrompt,
   VERIFICATION_PROMPT_VERSION,
 } from '@/lib/prompts/finalVerification';
+import { buildAddresseeLines, buildSignatureLines } from '@/lib/letterhead';
 
 export const maxDuration = 120;
 
@@ -129,6 +130,9 @@ export async function POST(request, { params }) {
   }
 
   // 3. DOCX qurulması
+  const addresseeLines = buildAddresseeLines({ tender });
+  const signatureLines = buildSignatureLines({ profile });
+
   const docxDoc = new Document({
     sections: [{
       children: [
@@ -137,11 +141,15 @@ export async function POST(request, { params }) {
           spacing: { after: 300 },
         }),
         new Paragraph({ text: 'TEXNİKİ TƏKLİF', heading: HeadingLevel.TITLE, spacing: { after: 100 } }),
-        new Paragraph({ text: tender.name, heading: HeadingLevel.HEADING_2, spacing: { after: 300 } }),
+        new Paragraph({ text: tender.name, heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+        ...addresseeLines.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 60 } })),
+        new Paragraph({ text: '', spacing: { after: 200 } }),
         ...Object.entries(sections).flatMap(([key, text]) => [
           new Paragraph({ text: SECTION_HEADINGS[key], heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } }),
           ...textToParagraphs(text),
         ]),
+        new Paragraph({ text: '', spacing: { before: 400, after: 100 } }),
+        ...signatureLines.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 80 } })),
       ],
     }],
   });
@@ -163,6 +171,8 @@ export async function POST(request, { params }) {
   try {
     const pdfBuffer = await generateProposalPdf({
       tenderName: tender.name,
+      addresseeLines,
+      signatureLines,
       sections: Object.entries(sections).map(([key, text]) => ({ heading: SECTION_HEADINGS[key], text })),
     });
     pdfFileName = `Texniki-Teklif-${Date.now()}.pdf`;

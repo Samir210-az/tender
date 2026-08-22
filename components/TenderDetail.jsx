@@ -167,6 +167,7 @@ export default function TenderDetail({ tenderId }) {
         <div className="mt-3 mb-6">
           <h1 className="text-2xl font-semibold">{tender.name}</h1>
           {tender.organization && <p className="text-sm text-neutral-400">{tender.organization}</p>}
+          <TenderNumberField tenderId={tenderId} regId={regId} value={tender.tender_number} onSaved={fetchData} />
           {tender.deadline && <DeadlineCountdown deadline={tender.deadline} />}
           {typeof tender.readiness_score === 'number' && (
             <ReadinessScoreCard score={tender.readiness_score} breakdown={tender.readiness_breakdown} />
@@ -402,6 +403,49 @@ function IssueSeverityTag({ severity }) {
   };
   const [label, cls] = map[severity] || [severity, 'text-neutral-500'];
   return <span className={`font-semibold ${cls}`}>[{label}]</span>;
+}
+
+function TenderNumberField({ tenderId, regId, value, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+        body: JSON.stringify({ tender_number: val }),
+      });
+      setEditing(false);
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          className="input max-w-[200px] text-sm"
+          placeholder="Tender/müsabiqə nömrəsi"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          autoFocus
+        />
+        <button onClick={handleSave} disabled={saving} className="text-xs text-emerald-400">Saxla</button>
+        <button onClick={() => setEditing(false)} className="text-xs text-neutral-500">Ləğv et</button>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={() => setEditing(true)} className="mt-1 text-xs text-neutral-500 hover:text-neutral-300">
+      {value ? `Tender №: ${value}` : '+ Tender nömrəsi əlavə et'}
+    </button>
+  );
 }
 
 function DeadlineCountdown({ deadline }) {
