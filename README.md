@@ -118,3 +118,7 @@ npm run dev
 
 ### DÜZƏLİŞ: procurement_type constraint uyğunsuzluğu
 - Kəşf edildi: `tenders.procurement_type` sütunu əvvəlki sessiyada fərqli dəyərlərlə (`isler`/`mallar`/`xidmetler`) yaradılmışdı, kod isə (`works`/`goods`/`services`) yazırdı — "Satınalma növü" seçimi HƏMİŞƏ uğursuz olardı (constraint pozuntusu). DB constraint kodla uyğunlaşdırıldı.
+
+### FORMA 4 düzəlişi — rəsmi struktura tam uyğunlaşdırma
+- Əvvəlki versiya sadələşdirilmiş idi (8 sətir CV) — rəsmi FORMA 4 strukturu ilə tutuşdurulub, çatışan hissələr əlavə edildi: "İş yeri barədə məlumat" bölməsi, "Peşəkar təcrübə", **İltizam** (bəyannamə — sabit hüquqi mətn, imza xətləri namizəd + şirkət nümayəndəsi üçün)
+- Konkret tender üçün "Məşğulluq dövrü/İş müddəti" sahələri hələ toplanmır (bu, hər tender üçün fərqlidir) — sənəddə açıq qeyd olunur ki, əl ilə əlavə edilməlidir, uydurulmur
