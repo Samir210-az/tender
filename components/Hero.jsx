@@ -59,6 +59,14 @@ export default function Hero({ onStart, onLogin }) {
       />
 
       <div className="relative mx-auto max-w-lg px-6 pb-10 pt-14">
+        {/* Təlimat linki — ən yuxarıda, ilk görünən */}
+        <Link
+          href="/telimat"
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600/15 py-3 text-sm font-medium text-sky-300 ring-1 ring-sky-600/40 transition hover:bg-sky-600/25"
+        >
+          📘 İstifadə Təlimatını oxu
+        </Link>
+
         {/* Wordmark */}
         <h1
           onClick={handleLogoTap}
@@ -108,13 +116,6 @@ export default function Hero({ onStart, onLogin }) {
         >
           Artıq hesabım var — Giriş
         </button>
-
-        <Link
-          href="/telimat"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600/15 py-3 text-sm font-medium text-sky-300 ring-1 ring-sky-600/40 transition hover:bg-sky-600/25"
-        >
-          📘 İstifadə Təlimatını oxu
-        </Link>
 
         {/* Trust row */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-neutral-600">
