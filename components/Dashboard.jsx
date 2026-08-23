@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [form, setForm] = useState({ name: '', organization: '', deadline: '', jurisdiction: 'AZ', tender_number: '' });
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -111,51 +112,68 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-neutral-950 p-6 text-neutral-100">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        {/* Başlıq + ikinci dərəcəli naviqasiya */}
+        <div className="mb-5 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Tenderlər</h1>
             {subscription?.company_name && (
               <p className="text-sm text-neutral-500">{subscription.company_name}</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/telimat" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:border-neutral-600">
-              Təlimat
-            </Link>
-            <Link href="/company" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:border-neutral-600">
-              Şirkət profili
-            </Link>
-            <input
-              ref={extractFileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png"
-              onChange={handleFileExtract}
-              className="hidden"
-              id="extract-file-upload"
-            />
-            <label
-              htmlFor="extract-file-upload"
-              className="cursor-pointer rounded-lg border border-indigo-600/60 bg-indigo-600/10 px-3 py-2 text-sm font-medium text-indigo-300 hover:border-indigo-500"
-            >
-              {extracting ? 'AI oxuyur...' : '📄 Sənəddən yarat'}
-            </label>
-            <button
-              onClick={() => setShowCreate((s) => !s)}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              + Yeni tender
-            </button>
+          <div className="flex items-center gap-4 pt-1.5 text-sm text-neutral-500">
+            <Link href="/telimat" className="hover:text-neutral-300">Təlimat</Link>
+            <Link href="/company" className="hover:text-neutral-300">Şirkət profili</Link>
           </div>
         </div>
 
-        {extracting && (
-          <p className="mb-4 text-sm text-indigo-400">
-            AI sənədi oxuyur, tender adı/təşkilat/son tarixi tapmağa çalışır...
-          </p>
-        )}
+        {/* Əsas hərəkət — tək düymə, açılan menyu ilə iki yaratma yolu */}
+        <div className="relative mb-6">
+          <input
+            ref={extractFileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png"
+            onChange={handleFileExtract}
+            className="hidden"
+            id="extract-file-upload"
+          />
+          <button
+            onClick={() => setShowCreateMenu((s) => !s)}
+            disabled={extracting}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {extracting ? 'AI sənədi oxuyur...' : '+ Tender əlavə et'}
+          </button>
+
+          {showCreateMenu && !extracting && (
+            <div className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 shadow-xl">
+              <label
+                htmlFor="extract-file-upload"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex cursor-pointer items-center gap-3 border-b border-neutral-800 px-4 py-3.5 hover:bg-neutral-800/60"
+              >
+                <span className="text-lg">📄</span>
+                <span>
+                  <span className="block text-sm font-medium text-neutral-100">Sənəddən yarat</span>
+                  <span className="block text-xs text-neutral-500">AI tender sənədini oxuyub avtomatik doldurur</span>
+                </span>
+              </label>
+              <button
+                onClick={() => { setShowCreate(true); setShowCreateMenu(false); }}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-neutral-800/60"
+              >
+                <span className="text-lg">✎</span>
+                <span>
+                  <span className="block text-sm font-medium text-neutral-100">Əl ilə yarat</span>
+                  <span className="block text-xs text-neutral-500">Ad, təşkilat və son tarixi özün yazırsan</span>
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {showCreate && (
           <form onSubmit={handleCreate} className="mb-6 space-y-3 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+            <p className="text-sm font-medium text-neutral-200">Yeni tender — əl ilə</p>
             <input
               className="input w-full"
               placeholder="Tender adı"
