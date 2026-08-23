@@ -89,3 +89,8 @@ npm run dev
 - Rəsmi "A. Preambula" bölməsi (5 sabit hüquqi bənd) əlavə olundu — deterministik, AI yazmır
 - Sütun başlığı "№" → "Maddə №" (rəsmi terminə tam uyğun)
 - Başlıq "FORMA 2 — İş həcmləri cədvəli (Qiymət cədvəli)" — həm işlər (İş həcmləri cədvəli), həm mallar (Qiymət cədvəli) üçün rəsmi adları əhatə edir
+
+### Public Hero səhifəsi
+- Qeydiyyat olmayan istifadəçiyə birbaşa forma göstərmək əvəzinə, əvvəlcə `components/Hero.jsx` (dəyər təklifi, TikTok/Instagram reklamlarının vizual üslubuna uyğun — tünd fon, yaşıl/bənövşəyi vurğu) göstərilir
+- "Başla" düyməsi qeydiyyat formasını açır (`RegistrationGate`-də `showRegistrationForm` state)
+- **Diqqət**: Hero-da HEÇ BİR uydurma statistika yoxdur (reklam şəkillərindəki "250+ şirkət", "92% uyğunluq" kimi rəqəmlər AI-nin nümunə datasıdır, real deyil — saytın özündə istifadə edilməyib)

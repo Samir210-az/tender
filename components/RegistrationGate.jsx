@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSubscription } from '@/lib/useSubscription';
 import Footer from '@/components/Footer';
+import Hero from '@/components/Hero';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '994552107111';
 
@@ -13,6 +14,7 @@ const PLANS = [
 
 export default function RegistrationGate({ children }) {
   const { status, subscription, register, logout } = useSubscription();
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [form, setForm] = useState({ companyName: '', phone: '', pin: '', plan: 'monthly' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -58,6 +60,12 @@ export default function RegistrationGate({ children }) {
     );
   }
 
+  // status === 'none' — əvvəlcə Hero (dəyər təklifi), yalnız "Başla"
+  // basıldıqdan sonra qeydiyyat forması göstərilir.
+  if (!showRegistrationForm) {
+    return <Hero onStart={() => setShowRegistrationForm(true)} />;
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -81,6 +89,13 @@ export default function RegistrationGate({ children }) {
     <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-8">
         <div>
+          <button
+            type="button"
+            onClick={() => setShowRegistrationForm(false)}
+            className="mb-3 text-sm text-neutral-500 hover:text-neutral-300"
+          >
+            ← Geri
+          </button>
           <h1 className="text-xl font-semibold text-neutral-100">Qeydiyyat</h1>
           <p className="mt-1 text-sm text-neutral-400">
             Qeydiyyatdan sonra ödəniş WhatsApp vasitəsilə təsdiqlənir.
