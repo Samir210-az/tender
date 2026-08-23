@@ -28,7 +28,7 @@ export async function POST(request) {
   }
 
   const { action, id } = await request.json();
-  if (!id || !['approve', 'reject', 'extend'].includes(action)) {
+  if (!id || !['approve', 'reject', 'extend', 'deactivate'].includes(action)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
@@ -54,10 +54,33 @@ export async function POST(request) {
   } else if (action === 'extend') {
     const base = reg.expires_at && new Date(reg.expires_at).getTime() > Date.now() ? new Date(reg.expires_at).getTime() : Date.now();
     update = { status: 'active', expires_at: new Date(base + duration).toISOString() };
+  } else if (action === 'deactivate') {
+    // Aktiv abunəni dərhal dayandırır (məs. ödəniş problemi) — data qalır,
+    // sonra "Təsdiqlə" ilə yenidən aktivləşdirilə bilər.
+    update = { status: 'rejected', rejected_at: new Date().toISOString(), expires_at: new Date().toISOString() };
   }
 
   const { error: updateError } = await db.from('registrations').update(update).eq('id', id);
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request) {
+  const pin = request.headers.get('x-admin-pin');
+  if (!verifyAdminPinServer(pin)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await request.json();
+  if (!id) return NextResponse.json({ error: 'id tələb olunur' }, { status: 400 });
+
+  const db = getSupabaseAdmin();
+
+  // CASCADE bütün tender/company data-nı da siləcək (schema-da on delete
+  // cascade var) — ona görə bu, geri qaytarıla bilməz və UI-da təsdiq tələb edir.
+  const { error } = await db.from('registrations').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

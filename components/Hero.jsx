@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 
 const FEATURES = [
@@ -26,6 +28,24 @@ const FEATURES = [
 ];
 
 export default function Hero({ onStart, onLogin }) {
+  const router = useRouter();
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimer = useRef(null);
+
+  // Loqoya 5 tab — gizli admin panel girişi (digər layihələrdəki eyni pattern).
+  // Tab-lar 1.5 saniyə ərzində gəlməlidir, əks halda sayğac sıfırlanır.
+  const handleLogoTap = () => {
+    setTapCount((prev) => {
+      const next = prev + 1;
+      if (next >= 5) {
+        router.push('/admin');
+        return 0;
+      }
+      return next;
+    });
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => setTapCount(0), 1500);
+  };
   return (
     <div className="relative min-h-screen overflow-hidden bg-neutral-950">
       {/* Ambient glow background */}
@@ -39,7 +59,10 @@ export default function Hero({ onStart, onLogin }) {
 
       <div className="relative mx-auto max-w-lg px-6 pb-10 pt-14">
         {/* Wordmark */}
-        <h1 className="text-5xl font-black tracking-tight text-neutral-50">
+        <h1
+          onClick={handleLogoTap}
+          className="select-none text-5xl font-black tracking-tight text-neutral-50"
+        >
           TENDER{' '}
           <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
             AI

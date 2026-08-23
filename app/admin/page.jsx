@@ -11,6 +11,8 @@ export default function AdminPage() {
   const [pinError, setPinError] = useState('');
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) setAuthed(true);
@@ -58,6 +60,23 @@ export default function AdminPage() {
       body: JSON.stringify({ action, id }),
     });
     if (res.ok) fetchRegistrations();
+  };
+
+  const handleDelete = async (id) => {
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/admin/registrations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': storedPin() },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setConfirmDeleteId(null);
+        fetchRegistrations();
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!authed) {
@@ -115,7 +134,7 @@ export default function AdminPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
                   {reg.status === 'pending' && (
                     <>
                       <button onClick={() => performAction('approve', reg.id)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">
@@ -127,8 +146,37 @@ export default function AdminPage() {
                     </>
                   )}
                   {(reg.status === 'active' || reg.status === 'expired') && (
-                    <button onClick={() => performAction('extend', reg.id)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
-                      Uzat
+                    <>
+                      <button onClick={() => performAction('extend', reg.id)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
+                        Uzat
+                      </button>
+                      <button onClick={() => performAction('deactivate', reg.id)} className="rounded-lg bg-amber-600/80 px-3 py-1.5 text-xs font-medium text-white">
+                        Deaktiv et
+                      </button>
+                    </>
+                  )}
+                  {reg.status === 'rejected' && (
+                    <button onClick={() => performAction('approve', reg.id)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white">
+                      Yenidən aktivləşdir
+                    </button>
+                  )}
+
+                  {confirmDeleteId === reg.id ? (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleDelete(reg.id)}
+                        disabled={deleting}
+                        className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                      >
+                        {deleting ? '...' : 'Təsdiq (həmişəlik)'}
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
+                        Ləğv et
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDeleteId(reg.id)} className="rounded-lg border border-red-800 px-3 py-1.5 text-xs font-medium text-red-400">
+                      Sil
                     </button>
                   )}
                 </div>

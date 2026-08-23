@@ -100,3 +100,7 @@ npm run dev
 - İndi Hero-da "Artıq hesabım var — Giriş" düyməsi — telefon + PIN ilə əsl giriş
 - `/api/login` — pin_hash-i client-dəki eyni SHA-256 alqoritmi ilə müqayisə edir, uğurlu olsa regId qaytarır
 - Təhlükəsizlik: "telefon tapılmadı" və "PIN səhvdir" eyni generic mesajla göstərilir (enumeration hücumunun qarşısını almaq üçün)
+
+### Loqoya 5-tab admin girişi + Admin panel əməliyyatları genişləndirildi
+- Hero-da "TENDER AI" başlığına 5 dəfə (1.5 saniyə ərzində) toxunmaq `/admin`-ə aparır — digər layihələrdəki eyni pattern
+- Admin panel: `active`/`expired` statuslu qeydiyyatlara **"Deaktiv et"** (dərhal dayandırır, data qalır, yenidən aktivləşdirilə bilər) və **"Sil"** (təsdiqləmə tələb edir, CASCADE ilə bütün tender/company data-nı da silir — geri qaytarıla bilməz) düymələri əlavə olundu
