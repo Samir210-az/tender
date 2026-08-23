@@ -7,7 +7,7 @@ import { useSubscription } from '@/lib/useSubscription';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { regId, subscription } = useSubscription();
+  const { regId, subscription, logout } = useSubscription();
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -113,16 +113,34 @@ export default function Dashboard() {
     <main className="min-h-screen bg-neutral-950 p-6 text-neutral-100">
       <div className="mx-auto max-w-3xl">
         {/* Başlıq + ikinci dərəcəli naviqasiya */}
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Tenderlər</h1>
-            {subscription?.company_name && (
-              <p className="text-sm text-neutral-500">{subscription.company_name}</p>
-            )}
+        <div className="mb-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">Tenderlər</h1>
+              {subscription?.company_name && (
+                <p className="text-sm text-neutral-500">{subscription.company_name}</p>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-4 pt-1.5 text-sm text-neutral-500">
-            <Link href="/telimat" className="hover:text-neutral-300">Təlimat</Link>
-            <Link href="/company" className="hover:text-neutral-300">Şirkət profili</Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Link
+              href="/telimat"
+              className="rounded-lg bg-sky-600/15 px-3 py-1.5 text-sm font-medium text-sky-300 ring-1 ring-sky-600/40 hover:bg-sky-600/25"
+            >
+              📘 Təlimat
+            </Link>
+            <Link
+              href="/company"
+              className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-300 hover:border-neutral-500"
+            >
+              Şirkət profili
+            </Link>
+            <button
+              onClick={logout}
+              className="ml-auto rounded-lg px-3 py-1.5 text-sm text-neutral-500 hover:text-red-400"
+            >
+              Çıxış
+            </button>
           </div>
         </div>
 
