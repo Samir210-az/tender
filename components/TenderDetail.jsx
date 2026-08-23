@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSubscription } from '@/lib/useSubscription';
 import { computeRisks, summarizeRisks, computeBidRecommendation } from '@/lib/riskEngine';
+import { getFormsForProcurementType, CAPABILITY_LABELS, COMPLIANCE_CERTIFICATES } from '@/lib/formaRegistry';
 
 const CATEGORY_LABELS = {
   tender_notice: 'Elan',
@@ -170,6 +171,7 @@ export default function TenderDetail({ tenderId }) {
         <div className="mt-3 mb-6">
           <EditableTenderHeader tender={tender} tenderId={tenderId} regId={regId} onSaved={fetchData} />
           <TenderNumberField tenderId={tenderId} regId={regId} value={tender.tender_number} onSaved={fetchData} />
+          <ProcurementTypeField tenderId={tenderId} regId={regId} value={tender.procurement_type} onSaved={fetchData} />
           {tender.deadline && <DeadlineCountdown deadline={tender.deadline} />}
           {typeof tender.readiness_score === 'number' && (
             <ReadinessScoreCard score={tender.readiness_score} breakdown={tender.readiness_breakdown} />
@@ -181,6 +183,7 @@ export default function TenderDetail({ tenderId }) {
               deadline={tender.deadline}
             />
           )}
+          <RequiredDocumentsChecklist procurementType={tender.procurement_type} />
         </div>
 
         <div className="mb-6 rounded-xl border border-dashed border-neutral-700 bg-neutral-900 p-6 text-center">
@@ -709,6 +712,110 @@ function EditableTenderHeader({ tender, tenderId, regId, onSaved }) {
       >
         ✎ Redaktə et
       </button>
+    </div>
+  );
+}
+
+function ProcurementTypeField({ tenderId, regId, value, onSaved }) {
+  const [saving, setSaving] = useState(false);
+  const labels = { works: 'İşlər', goods: 'Mallar', services: 'Xidmətlər' };
+
+  const handleChange = async (newType) => {
+    setSaving(true);
+    try {
+      await fetch(`/api/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+        body: JSON.stringify({ procurement_type: newType }),
+      });
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 flex items-center gap-2 text-xs">
+      <span className="text-neutral-500">Satınalma növü:</span>
+      {['works', 'goods', 'services'].map((t) => (
+        <button
+          key={t}
+          onClick={() => handleChange(t)}
+          disabled={saving}
+          className={`rounded-md px-2 py-1 ${
+            value === t ? 'bg-indigo-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-neutral-200'
+          }`}
+        >
+          {labels[t]}
+        </button>
+      ))}
+      {!value && (
+        <span className="text-amber-400">— seç (FORMA nömrələnməsi buna görə dəyişir)</span>
+      )}
+    </div>
+  );
+}
+
+function RequiredDocumentsChecklist({ procurementType }) {
+  const [expanded, setExpanded] = useState(false);
+  const forms = getFormsForProcurementType(procurementType);
+  const isUnverifiedServices = procurementType === 'services';
+
+  return (
+    <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <button onClick={() => setExpanded((e) => !e)} className="flex w-full items-center justify-between text-left">
+        <span className="text-sm font-semibold text-neutral-100">
+          Tenderə tələb olunan bütün sənədlər {expanded ? '▲' : '▼'}
+        </span>
+        <span className="text-xs text-neutral-500">
+          {forms.filter((f) => f.capability === 'auto').length}/{forms.length} biz hazırlayırıq
+        </span>
+      </button>
+
+      {!procurementType && (
+        <p className="mt-2 text-xs text-amber-400">
+          ⚠ Satınalma növü seçilməyib — aşağıda ehtiyat olaraq "İşlər" seti göstərilir, real tenderində fərqli ola bilər.
+        </p>
+      )}
+      {isUnverifiedServices && (
+        <p className="mt-2 text-xs text-amber-400">
+          ⚠ Xidmətlər üçün FORMA seti bu sistemdə hələ ayrıca doğrulanmayıb (İşlər seti təxmini göstərilir) — real tender sənədindəki FORMA-larla tutuşdur.
+        </p>
+      )}
+
+      {expanded && (
+        <div className="mt-3 space-y-2">
+          {forms.map((f) => {
+            const cap = CAPABILITY_LABELS[f.capability];
+            return (
+              <div key={f.id} className="flex items-start justify-between gap-3 rounded-lg bg-neutral-800/50 p-2.5 text-xs">
+                <div>
+                  <span className="font-medium text-neutral-200">FORMA {f.number}. {f.name}</span>
+                  {f.conditional && (
+                    <span className="ml-1.5 text-neutral-500">
+                      (yalnız {f.conditional === 'joint_venture' ? 'birgə fəaliyyət' : 'subpodratçı'} varsa)
+                    </span>
+                  )}
+                </div>
+                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${cap.badgeClass}`}>
+                  {cap.label}
+                </span>
+              </div>
+            );
+          })}
+
+          <div className="mt-3 border-t border-neutral-800 pt-3">
+            <p className="mb-1.5 text-xs font-medium text-neutral-300">
+              + Uyğunluq sənədləri (dövlət orqanlarından — özün əldə edib /company-də yüklə):
+            </p>
+            <ul className="space-y-1 text-xs text-neutral-500">
+              {COMPLIANCE_CERTIFICATES.map((c) => (
+                <li key={c}>• {c}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

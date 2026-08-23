@@ -54,7 +54,7 @@ export async function PATCH(request, { params }) {
   if (!owns) return NextResponse.json({ error: 'Tender tapılmadı' }, { status: 404 });
 
   const body = await request.json();
-  const allowedFields = ['name', 'organization', 'deadline', 'tender_number'];
+  const allowedFields = ['name', 'organization', 'deadline', 'tender_number', 'procurement_type'];
   const payload = {};
   for (const f of allowedFields) {
     if (f in body) payload[f] = body[f] === '' ? null : body[f];

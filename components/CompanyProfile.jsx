@@ -290,6 +290,16 @@ export default function CompanyProfile() {
         <section className="mt-8">
           <ProductCatalog regId={regId} />
         </section>
+
+        {/* AVADANLIQ (FORMA 3 üçün) */}
+        <section className="mt-8">
+          <EquipmentList regId={regId} />
+        </section>
+
+        {/* HEYƏT (FORMA 4 üçün) */}
+        <section className="mt-8">
+          <PersonnelList regId={regId} />
+        </section>
       </div>
     </main>
   );
@@ -360,6 +370,161 @@ function ProductCatalog({ regId }) {
               <p className="text-xs text-neutral-500">{p.unit}{p.unit_price ? ` · ${p.unit_price} ${p.currency}` : ''}</p>
             </div>
             <button onClick={() => handleDelete(p.id)} className="text-xs text-red-400">Sil</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EquipmentList({ regId }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', manufacturer: '', model: '', production_year: '', ownership_status: 'sexsi', location_status: 'bosda', owner_details: '' });
+
+  const fetchItems = async () => {
+    const res = await fetch('/api/company/equipment', { headers: { 'x-registration-id': regId } });
+    const data = await res.json();
+    setItems(data.equipment || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (regId) fetchItems(); }, [regId]);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    await fetch('/api/company/equipment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+      body: JSON.stringify(form),
+    });
+    setForm({ name: '', manufacturer: '', model: '', production_year: '', ownership_status: 'sexsi', location_status: 'bosda', owner_details: '' });
+    setShowForm(false);
+    fetchItems();
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/company/equipment/${id}`, { method: 'DELETE', headers: { 'x-registration-id': regId } });
+    fetchItems();
+  };
+
+  const OWNERSHIP_LABELS = { sexsi: 'Şəxsi', icare: 'İcarə', lizinq: 'Lizinq', xususi_istehsal: 'Xüsusi istehsal' };
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-medium">Avadanlıq</h2>
+        <button onClick={() => setShowForm((s) => !s)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">+ Əlavə et</button>
+      </div>
+      <p className="mb-3 text-xs text-neutral-500">
+        FORMA 3 (Texniki baza) bu siyahıdan avtomatik hazırlanır — tender texniki avadanlıq tələb edirsə lazımdır.
+      </p>
+
+      {showForm && (
+        <form onSubmit={handleAdd} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+          <input className="input" placeholder="Avadanlığın adı" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-2">
+            <input className="input" placeholder="İstehsalçı" value={form.manufacturer} onChange={(e) => setForm((f) => ({ ...f, manufacturer: e.target.value }))} />
+            <input className="input" placeholder="Model" value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input type="number" className="input" placeholder="İstehsal ili" value={form.production_year} onChange={(e) => setForm((f) => ({ ...f, production_year: e.target.value }))} />
+            <select className="input" value={form.ownership_status} onChange={(e) => setForm((f) => ({ ...f, ownership_status: e.target.value }))}>
+              <option value="sexsi">Şəxsi</option>
+              <option value="icare">İcarə</option>
+              <option value="lizinq">Lizinq</option>
+              <option value="xususi_istehsal">Xüsusi istehsal</option>
+            </select>
+          </div>
+          {form.ownership_status !== 'sexsi' && (
+            <textarea className="input" rows={2} placeholder="Mülkiyyətçinin adı, ünvanı, əlaqə, icarə şərtləri" value={form.owner_details} onChange={(e) => setForm((f) => ({ ...f, owner_details: e.target.value }))} />
+          )}
+          <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>
+        </form>
+      )}
+
+      <div className="space-y-2">
+        {!loading && items.length === 0 && <p className="text-sm text-neutral-500">Hələ avadanlıq əlavə edilməyib.</p>}
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+            <div>
+              <p className="text-sm font-medium">{item.name}{item.model ? ` — ${item.model}` : ''}</p>
+              <p className="text-xs text-neutral-500">{OWNERSHIP_LABELS[item.ownership_status]}{item.production_year ? ` · ${item.production_year}` : ''}</p>
+            </div>
+            <button onClick={() => handleDelete(item.id)} className="text-xs text-red-400">Sil</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PersonnelList({ regId }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ full_name: '', position: '', education: '', languages: '', professional_certificates: '', work_experience: '' });
+
+  const fetchItems = async () => {
+    const res = await fetch('/api/company/employees', { headers: { 'x-registration-id': regId } });
+    const data = await res.json();
+    setItems(data.employees || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (regId) fetchItems(); }, [regId]);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!form.full_name.trim()) return;
+    await fetch('/api/company/employees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+      body: JSON.stringify(form),
+    });
+    setForm({ full_name: '', position: '', education: '', languages: '', professional_certificates: '', work_experience: '' });
+    setShowForm(false);
+    fetchItems();
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/company/employees/${id}`, { method: 'DELETE', headers: { 'x-registration-id': regId } });
+    fetchItems();
+  };
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-medium">Heyət (əsas mütəxəssislər)</h2>
+        <button onClick={() => setShowForm((s) => !s)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">+ Əlavə et</button>
+      </div>
+      <p className="mb-3 text-xs text-neutral-500">
+        FORMA 4 (Heyətin tərcümeyi-halı) hər işçi üçün ayrıca bu məlumatlardan hazırlanır — tender minimum təcrübəli mütəxəssis tələb etdikdə lazımdır.
+      </p>
+
+      {showForm && (
+        <form onSubmit={handleAdd} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+          <input className="input" placeholder="Ad və soyad" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+          <input className="input" placeholder="Vəzifə (məs. Layihə meneceri)" value={form.position} onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))} />
+          <input className="input" placeholder="Təhsil" value={form.education} onChange={(e) => setForm((f) => ({ ...f, education: e.target.value }))} />
+          <input className="input" placeholder="Dil bilikləri" value={form.languages} onChange={(e) => setForm((f) => ({ ...f, languages: e.target.value }))} />
+          <input className="input" placeholder="Peşəkar sertifikatlar" value={form.professional_certificates} onChange={(e) => setForm((f) => ({ ...f, professional_certificates: e.target.value }))} />
+          <textarea className="input" rows={4} placeholder="İş təcrübəsi (tərs xronoloji — iş yeri, vəzifə, müddət, təcrübə təsviri)" value={form.work_experience} onChange={(e) => setForm((f) => ({ ...f, work_experience: e.target.value }))} />
+          <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>
+        </form>
+      )}
+
+      <div className="space-y-2">
+        {!loading && items.length === 0 && <p className="text-sm text-neutral-500">Hələ işçi əlavə edilməyib.</p>}
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+            <div>
+              <p className="text-sm font-medium">{item.full_name}</p>
+              <p className="text-xs text-neutral-500">{item.position || 'Vəzifə göstərilməyib'}</p>
+            </div>
+            <button onClick={() => handleDelete(item.id)} className="text-xs text-red-400">Sil</button>
           </div>
         ))}
       </div>
