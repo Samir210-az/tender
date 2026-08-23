@@ -7,6 +7,22 @@ async function verifyTenderOwnership(db, tenderId, regId) {
   return !error && !!data;
 }
 
+/**
+ * quantity/unit_price sahələrini doğrulayır — mənfi/NaN dəyərlər rəsmi
+ * sənəddə (Yekun Cəm) yanlış nəticəyə səbəb ola bilər.
+ */
+function validatePriceFields(body) {
+  if (body.quantity !== undefined) {
+    const q = Number(body.quantity);
+    if (!Number.isFinite(q) || q <= 0) return 'Miqdar müsbət rəqəm olmalıdır';
+  }
+  if (body.unit_price !== undefined && body.unit_price !== null && body.unit_price !== '') {
+    const p = Number(body.unit_price);
+    if (!Number.isFinite(p) || p < 0) return 'Qiymət mənfi ola bilməz';
+  }
+  return null;
+}
+
 export async function GET(request, { params }) {
   const regId = request.headers.get('x-registration-id');
   const check = await requireActiveRegistration(regId);
@@ -54,6 +70,8 @@ export async function POST(request, { params }) {
   if (!body.description?.trim()) {
     return NextResponse.json({ error: 'Təsvir tələb olunur' }, { status: 400 });
   }
+  const validationError = validatePriceFields(body);
+  if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
   const { data: existing } = await db.from('tender_price_items').select('item_no').eq('tender_id', tenderId).order('item_no', { ascending: false }).limit(1);
   const nextItemNo = (existing?.[0]?.item_no || 0) + 1;
