@@ -168,8 +168,7 @@ export default function TenderDetail({ tenderId }) {
         <a href="/" className="text-sm text-neutral-500 hover:text-neutral-300">← Geri</a>
 
         <div className="mt-3 mb-6">
-          <h1 className="text-2xl font-semibold">{tender.name}</h1>
-          {tender.organization && <p className="text-sm text-neutral-400">{tender.organization}</p>}
+          <EditableTenderHeader tender={tender} tenderId={tenderId} regId={regId} onSaved={fetchData} />
           <TenderNumberField tenderId={tenderId} regId={regId} value={tender.tender_number} onSaved={fetchData} />
           {tender.deadline && <DeadlineCountdown deadline={tender.deadline} />}
           {typeof tender.readiness_score === 'number' && (
@@ -655,6 +654,63 @@ function IssueSeverityTag({ severity }) {
   };
   const [label, cls] = map[severity] || [severity, 'text-neutral-500'];
   return <span className={`font-semibold ${cls}`}>[{label}]</span>;
+}
+
+function EditableTenderHeader({ tender, tenderId, regId, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(tender.name || '');
+  const [organization, setOrganization] = useState(tender.organization || '');
+  const [deadline, setDeadline] = useState(tender.deadline ? tender.deadline.slice(0, 10) : '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+        body: JSON.stringify({ name, organization, deadline: deadline || null }),
+      });
+      setEditing(false);
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="space-y-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
+        <input className="input w-full text-lg font-semibold" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tender adı" />
+        <input className="input w-full" value={organization} onChange={(e) => setOrganization(e.target.value)} placeholder="Satınalan təşkilat" />
+        <input type="date" className="input w-full" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+        <div className="flex gap-2">
+          <button onClick={handleSave} disabled={saving} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
+            {saving ? 'Saxlanılır...' : 'Saxla'}
+          </button>
+          <button onClick={() => setEditing(false)} className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-medium text-white">
+            Ləğv et
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-start justify-between gap-2">
+      <div>
+        <h1 className="text-2xl font-semibold">{tender.name}</h1>
+        {tender.organization && <p className="text-sm text-neutral-400">{tender.organization}</p>}
+      </div>
+      <button
+        onClick={() => setEditing(true)}
+        className="shrink-0 text-xs text-neutral-600 hover:text-neutral-300"
+        title="Ad/təşkilat/son tarixi redaktə et"
+      >
+        ✎ Redaktə et
+      </button>
+    </div>
+  );
 }
 
 function TenderNumberField({ tenderId, regId, value, onSaved }) {

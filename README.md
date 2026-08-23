@@ -104,3 +104,7 @@ npm run dev
 ### Loqoya 5-tab admin girişi + Admin panel əməliyyatları genişləndirildi
 - Hero-da "TENDER AI" başlığına 5 dəfə (1.5 saniyə ərzində) toxunmaq `/admin`-ə aparır — digər layihələrdəki eyni pattern
 - Admin panel: `active`/`expired` statuslu qeydiyyatlara **"Deaktiv et"** (dərhal dayandırır, data qalır, yenidən aktivləşdirilə bilər) və **"Sil"** (təsdiqləmə tələb edir, CASCADE ilə bütün tender/company data-nı da silir — geri qaytarıla bilməz) düymələri əlavə olundu
+
+### "Sənəddən yarat" + İstifadə Təlimatı
+- **Sənəddən tender yaratma** — dashboard-da "📄 Sənəddən yarat": elan olunmuş tenderin sənədini birbaşa yükləyirsən, AI tender adını/təşkilatı/son tarixi/nömrəni sənəddən çıxarıb tender-i avtomatik yaradır, fayl ilk sənəd kimi əlavə olunur. Nəticələr tender səhifəsində "✎ Redaktə et" ilə düzəldilə bilər.
+- `/telimat` — tam A-dan-Z istifadə təlimatı (şirkət profili doldurmaq, tender daxil etmək, uyğunluq yoxlaması, FORMA 1/2, ZIP paket, müsbət nəticə üçün məsləhətlər)

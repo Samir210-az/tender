@@ -1,19 +1,27 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSubscription } from '@/lib/useSubscription';
 
 export default function Dashboard() {
+  const router = useRouter();
   const { regId, subscription } = useSubscription();
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', organization: '', deadline: '', jurisdiction: 'AZ' });
+  const [form, setForm] = useState({ name: '', organization: '', deadline: '', jurisdiction: 'AZ', tender_number: '' });
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [error, setError] = useState('');
+
+  // "Sənəddən yarat" axını
+  const [pendingFile, setPendingFile] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedInfo, setExtractedInfo] = useState(null);
+  const extractFileInputRef = useRef(null);
 
   const fetchTenders = useCallback(async () => {
     if (!regId) return;
@@ -54,6 +62,34 @@ export default function Dashboard() {
     }
   };
 
+  const handleFileExtract = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setExtracting(true);
+    setExtractedInfo(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('jurisdiction', 'AZ');
+      const res = await fetch('/api/tenders/create-from-document', {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Xəta baş verdi');
+      // Tender yaradıldı — birbaşa onun səhifəsinə keçirik ki, istifadəçi
+      // AI-nin tapdığı ad/təşkilat/tarixi dərhal görüb lazım gələrsə düzəltsin.
+      router.push(`/tenders/${data.tender.id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExtracting(false);
+      if (extractFileInputRef.current) extractFileInputRef.current.value = '';
+    }
+  };
+
   const handleDelete = async (tenderId) => {
     setDeletingId(tenderId);
     try {
@@ -83,9 +119,26 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/telimat" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:border-neutral-600">
+              Təlimat
+            </Link>
             <Link href="/company" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:border-neutral-600">
               Şirkət profili
             </Link>
+            <input
+              ref={extractFileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png"
+              onChange={handleFileExtract}
+              className="hidden"
+              id="extract-file-upload"
+            />
+            <label
+              htmlFor="extract-file-upload"
+              className="cursor-pointer rounded-lg border border-indigo-600/60 bg-indigo-600/10 px-3 py-2 text-sm font-medium text-indigo-300 hover:border-indigo-500"
+            >
+              {extracting ? 'AI oxuyur...' : '📄 Sənəddən yarat'}
+            </label>
             <button
               onClick={() => setShowCreate((s) => !s)}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
@@ -94,6 +147,12 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {extracting && (
+          <p className="mb-4 text-sm text-indigo-400">
+            AI sənədi oxuyur, tender adı/təşkilat/son tarixi tapmağa çalışır...
+          </p>
+        )}
 
         {showCreate && (
           <form onSubmit={handleCreate} className="mb-6 space-y-3 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
