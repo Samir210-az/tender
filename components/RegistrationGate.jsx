@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSubscription } from '@/lib/useSubscription';
 import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
+import LoginForm from '@/components/LoginForm';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '994552107111';
 
@@ -15,6 +16,7 @@ const PLANS = [
 export default function RegistrationGate({ children }) {
   const { status, subscription, register, logout } = useSubscription();
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const [form, setForm] = useState({ companyName: '', phone: '', pin: '', plan: 'monthly' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -62,8 +64,11 @@ export default function RegistrationGate({ children }) {
 
   // status === 'none' — əvvəlcə Hero (dəyər təklifi), yalnız "Başla"
   // basıldıqdan sonra qeydiyyat forması göstərilir.
+  if (showLoginForm) {
+    return <LoginForm onBack={() => setShowLoginForm(false)} />;
+  }
   if (!showRegistrationForm) {
-    return <Hero onStart={() => setShowRegistrationForm(true)} />;
+    return <Hero onStart={() => setShowRegistrationForm(true)} onLogin={() => setShowLoginForm(true)} />;
   }
 
   const handleSubmit = async (e) => {

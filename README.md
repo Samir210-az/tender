@@ -94,3 +94,9 @@ npm run dev
 - Qeydiyyat olmayan istifadəçiyə birbaşa forma göstərmək əvəzinə, əvvəlcə `components/Hero.jsx` (dəyər təklifi, TikTok/Instagram reklamlarının vizual üslubuna uyğun — tünd fon, yaşıl/bənövşəyi vurğu) göstərilir
 - "Başla" düyməsi qeydiyyat formasını açır (`RegistrationGate`-də `showRegistrationForm` state)
 - **Diqqət**: Hero-da HEÇ BİR uydurma statistika yoxdur (reklam şəkillərindəki "250+ şirkət", "92% uyğunluq" kimi rəqəmlər AI-nin nümunə datasıdır, real deyil — saytın özündə istifadə edilməyib)
+
+### Giriş (Login) axını
+- Əvvəllər YALNIZ localStorage-a əsaslanan "sessiya" var idi — başqa cihaz/brauzerdən mövcud müştərinin daxil olmaq yolu yox idi (yalnız mənim manual `?restore=` linkim ilə mümkün idi)
+- İndi Hero-da "Artıq hesabım var — Giriş" düyməsi — telefon + PIN ilə əsl giriş
+- `/api/login` — pin_hash-i client-dəki eyni SHA-256 alqoritmi ilə müqayisə edir, uğurlu olsa regId qaytarır
+- Təhlükəsizlik: "telefon tapılmadı" və "PIN səhvdir" eyni generic mesajla göstərilir (enumeration hücumunun qarşısını almaq üçün)

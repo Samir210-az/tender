@@ -25,7 +25,7 @@ const FEATURES = [
   },
 ];
 
-export default function Hero({ onStart }) {
+export default function Hero({ onStart, onLogin }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-neutral-950">
       {/* Ambient glow background */}
@@ -76,6 +76,13 @@ export default function Hero({ onStart }) {
           className="mt-11 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-3.5 text-base font-semibold text-neutral-950 shadow-[0_0_30px_rgba(16,185,129,0.35)] transition hover:shadow-[0_0_40px_rgba(16,185,129,0.5)]"
         >
           Başla
+        </button>
+
+        <button
+          onClick={onLogin}
+          className="mt-3 w-full rounded-xl border border-neutral-800 py-3 text-sm font-medium text-neutral-300 transition hover:border-neutral-600 hover:text-neutral-100"
+        >
+          Artıq hesabım var — Giriş
         </button>
 
         {/* Trust row */}
