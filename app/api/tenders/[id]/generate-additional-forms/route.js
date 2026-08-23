@@ -30,7 +30,12 @@ export async function POST(request, { params }) {
   const forma5Lines = buildForma5Lines({ profile });
   const forma7Rows = buildForma7Rows({ projects: projects || [] });
   const forma3Rows = buildForma3Rows({ equipment: equipment || [] });
-  const forma4Sections = buildForma4Sections({ employees: employees || [], companyName: profile.legal_name });
+  const forma4Sections = buildForma4Sections({
+    employees: employees || [],
+    companyName: profile.legal_name,
+    companyAddress: profile.legal_address,
+    contactPersonName: profile.authorized_rep_name,
+  });
 
   // DOCX
   const forma3TableRows = [
@@ -74,7 +79,10 @@ export async function POST(request, { params }) {
 
         new Paragraph({ text: '', spacing: { before: 300, after: 150 } }),
         new Paragraph({ children: [new PageBreak()] }),
-        new Paragraph({ text: 'FORMA 4 — Əsas heyətin tərcümeyi-halı və bəyannaməsi', heading: HeadingLevel.HEADING_1, spacing: { after: 150 } }),
+        new Paragraph({ text: 'FORMA 4 — Əsas heyətin tərcümeyi-halı və bəyannaməsi', heading: HeadingLevel.HEADING_1, spacing: { after: 100 } }),
+        ...(forma4Sections.length > 0
+          ? [new Paragraph({ children: [new TextRun(`Təchizatçının adı: ${forma4Sections[0].companyName}`)], spacing: { after: 150 } })]
+          : []),
         ...(forma4Sections.length > 0
           ? forma4Sections.flatMap((s, idx) => [
               ...(idx > 0 ? [new Paragraph({ children: [new PageBreak()] })] : []),
@@ -88,7 +96,7 @@ export async function POST(request, { params }) {
               new Paragraph({ children: [new TextRun(s.experienceText)], spacing: { after: 100 } }),
               new Paragraph({ children: [new TextRun({ text: 'İltizam', bold: true })], spacing: { before: 100, after: 60 } }),
               ...s.declaration.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 60 } })),
-              new Paragraph({ children: [new TextRun('Namizədin adı və soyadı: _______________________    İmza: _______________    Tarix: _____________')], spacing: { before: 100, after: 60 } }),
+              new Paragraph({ children: [new TextRun(`Namizədin adı və soyadı: ${s.fullName}    İmza: _______________    Tarix: _____________`)], spacing: { before: 100, after: 60 } }),
               new Paragraph({ children: [new TextRun('Təchizatçının səlahiyyətli nümayəndəsi: _______________________    İmza: _______________    Tarix: _____________')], spacing: { after: 200 } }),
             ])
           : [new Paragraph({ children: [new TextRun({ text: 'Şirkət profilində işçi əlavə edilməyib.', italics: true })] })]),

@@ -125,3 +125,14 @@ npm run dev
 
 ### DOCX/PDF-də səhifə kəsimləri
 - FORMA 3, FORMA 4 (hər işçi öz səhifəsində), FORMA 7 — hər biri yeni səhifədən başlayır (əvvəllər hamısı ard-arda axırdı, oxumaq çətin idi)
+
+### Dərin hüquqi audit — rəsmi mətnlə sətir-sətir müqayisə
+Rəsmi sənəd (NK Qərarı № 503) ilə kodumuz arasında tapılan uyğunsuzluqlar düzəldildi:
+- **FORMA 1, bənd (g)**: "alternativ təkliflər" istisnası əlavə olundu (əvvəllər natamam idi)
+- **FORMA 5**: rəsmi olmayan "Vəzifəsi" sahəsi silindi, rəsmi tələb olunan "Ünvanı" (nümayəndənin ünvanı) əlavə olundu — `/company`-də yeni sahə
+- **FORMA 4**: yuxarıda "Təchizatçının adı" sətri əlavə olundu, İşəgötürən ünvanı + əlaqəli şəxs əlavə olundu, İltizamda namizədin adı **əvvəlcədən doldurulur** (bilinən datanı boş qoymaq əvəzinə)
+
+**Qalan bilinən boşluqlar (aşağı prioritet, əl ilə tamamlanmalı)**:
+- FORMA 4: "Məşğulluq dövrü/İş müddəti" (bu konkret tender üçün) və "Hazırkı iş yerində çalışma müddəti" — tender-spesifik data, izlənmir, sənəddə açıq qeyd olunur ki, əl ilə əlavə edilməlidir
+- FORMA 7: davam edən layihələr üçün "tamamlanma faizi" toplanmır
+- Xidmətlər (services) üçün FORMA seti bu sistemdə HƏLƏ doğrulanmayıb (yalnız İşlər/Mallar tam yoxlanılıb)

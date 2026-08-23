@@ -215,6 +215,9 @@ export default function CompanyProfile() {
                 <input className="input w-full" placeholder="məs. Direktor" value={profile.authorized_rep_position || ''} onChange={(e) => handleProfileChange('authorized_rep_position', e.target.value)} />
               </Field>
             </div>
+            <Field label="İmzalayan şəxsin ünvanı">
+              <input className="input w-full" placeholder="FORMA 5 üçün tələb olunur" value={profile.authorized_rep_address || ''} onChange={(e) => handleProfileChange('authorized_rep_address', e.target.value)} />
+            </Field>
             <p className="text-[11px] text-neutral-500">
               Bu məlumatlar generasiya olunan sənədlərin imza blokunda avtomatik istifadə olunur (rəsmi FORMA 1 tələbinə uyğun — NK Qərarı № 503, 30.12.2023).
             </p>
