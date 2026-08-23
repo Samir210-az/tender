@@ -504,13 +504,20 @@ function PriceSchedule({ tenderId, regId, generatedDocs, onRefresh }) {
     fetchItems();
   };
 
+  const [savingCount, setSavingCount] = useState(0);
+
   const handleUpdatePrice = async (itemId, unit_price) => {
-    await fetch(`/api/tenders/${tenderId}/price-items/${itemId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
-      body: JSON.stringify({ unit_price: unit_price === '' ? null : parseFloat(unit_price) }),
-    });
-    fetchItems();
+    setSavingCount((c) => c + 1);
+    try {
+      await fetch(`/api/tenders/${tenderId}/price-items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-registration-id': regId },
+        body: JSON.stringify({ unit_price: unit_price === '' ? null : parseFloat(unit_price) }),
+      });
+      await fetchItems();
+    } finally {
+      setSavingCount((c) => c - 1);
+    }
   };
 
   const handleDeleteItem = async (itemId) => {
@@ -545,10 +552,10 @@ function PriceSchedule({ tenderId, regId, generatedDocs, onRefresh }) {
         <h2 className="text-lg font-semibold">Maliyyə Təklifi (FORMA 2)</h2>
         <button
           onClick={handleGenerate}
-          disabled={generating || !allPriced}
+          disabled={generating || !allPriced || savingCount > 0}
           className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
         >
-          {generating ? 'Hazırlanır...' : 'Cədvəli hazırla'}
+          {generating ? 'Hazırlanır...' : savingCount > 0 ? 'Saxlanılır...' : 'Cədvəli hazırla'}
         </button>
       </div>
       <p className="mb-3 text-xs text-neutral-500">
