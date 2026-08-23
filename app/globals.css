@@ -19,3 +19,17 @@ html, body {
 .input:focus {
   border-color: rgb(16 185 129);
 }
+
+/* Mascot loqo — yumşaq üzən animasiya */
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+.mascot-float {
+  animation: mascot-float 3.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-float {
+    animation: none;
+  }
+}

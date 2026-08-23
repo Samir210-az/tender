@@ -67,19 +67,27 @@ export default function Hero({ onStart, onLogin }) {
           📘 İstifadə Təlimatını oxu
         </Link>
 
-        {/* Wordmark */}
-        <h1
-          onClick={handleLogoTap}
-          className="select-none text-5xl font-black tracking-tight text-neutral-50"
-        >
-          TENDER{' '}
-          <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-            AI
-          </span>
-        </h1>
-        <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
-          Avtomatlaşdırılmış tender platforması
-        </p>
+        {/* Wordmark + Mascot — mərkəzləşdirilmiş, yazı yuxarıda, loqo altında */}
+        <div className="flex flex-col items-center text-center">
+          <h1
+            onClick={handleLogoTap}
+            className="select-none text-5xl font-black tracking-tight text-neutral-50"
+          >
+            TENDER{' '}
+            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+              AI
+            </span>
+          </h1>
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
+            Avtomatlaşdırılmış tender platforması
+          </p>
+          <img
+            src="/images/mascot.jpg"
+            alt="Tender AI mascot"
+            onClick={handleLogoTap}
+            className="mascot-float mt-5 h-24 w-24 select-none rounded-2xl object-cover ring-1 ring-neutral-800"
+          />
+        </div>
 
         {/* Value proposition */}
         <p className="mt-8 text-xl font-medium leading-snug text-neutral-100">
