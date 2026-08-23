@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, PageBreak } from 'docx';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireActiveRegistration } from '@/lib/requireActiveRegistration';
 import { buildForma5Lines, buildForma7Rows, buildForma3Rows, buildForma4Sections } from '@/lib/additionalForms';
@@ -66,15 +66,18 @@ export async function POST(request, { params }) {
         ...forma5Lines.map((line) => new Paragraph({ children: [new TextRun(line)], spacing: { after: 60 } })),
 
         new Paragraph({ text: '', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ children: [new PageBreak()] }),
         new Paragraph({ text: 'FORMA 3 — Texniki baza', heading: HeadingLevel.HEADING_1, spacing: { after: 150 } }),
         forma3Rows.length > 0
           ? new Table({ rows: forma3TableRows, width: { size: 100, type: WidthType.PERCENTAGE } })
           : new Paragraph({ children: [new TextRun({ text: 'Şirkət profilində avadanlıq əlavə edilməyib.', italics: true })] }),
 
         new Paragraph({ text: '', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ children: [new PageBreak()] }),
         new Paragraph({ text: 'FORMA 4 — Əsas heyətin tərcümeyi-halı və bəyannaməsi', heading: HeadingLevel.HEADING_1, spacing: { after: 150 } }),
         ...(forma4Sections.length > 0
-          ? forma4Sections.flatMap((s) => [
+          ? forma4Sections.flatMap((s, idx) => [
+              ...(idx > 0 ? [new Paragraph({ children: [new PageBreak()] })] : []),
               new Paragraph({ text: `${s.fullName} — ${s.position}`, heading: HeadingLevel.HEADING_2, spacing: { before: 150, after: 80 } }),
               new Paragraph({ children: [new TextRun({ text: s.tenderSpecificNote, italics: true, color: 'B45309' })], spacing: { after: 100 } }),
               new Paragraph({ children: [new TextRun({ text: 'Heyət barədə məlumat', bold: true })], spacing: { after: 60 } }),
@@ -91,6 +94,7 @@ export async function POST(request, { params }) {
           : [new Paragraph({ children: [new TextRun({ text: 'Şirkət profilində işçi əlavə edilməyib.', italics: true })] })]),
 
         new Paragraph({ text: '', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ children: [new PageBreak()] }),
         new Paragraph({ text: 'FORMA 7 — Oxşar işlər üzrə təcrübə', heading: HeadingLevel.HEADING_1, spacing: { after: 150 } }),
         forma7Rows.length > 0
           ? new Table({ rows: forma7TableRows, width: { size: 100, type: WidthType.PERCENTAGE } })

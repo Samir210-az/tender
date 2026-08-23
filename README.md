@@ -122,3 +122,6 @@ npm run dev
 ### FORMA 4 düzəlişi — rəsmi struktura tam uyğunlaşdırma
 - Əvvəlki versiya sadələşdirilmiş idi (8 sətir CV) — rəsmi FORMA 4 strukturu ilə tutuşdurulub, çatışan hissələr əlavə edildi: "İş yeri barədə məlumat" bölməsi, "Peşəkar təcrübə", **İltizam** (bəyannamə — sabit hüquqi mətn, imza xətləri namizəd + şirkət nümayəndəsi üçün)
 - Konkret tender üçün "Məşğulluq dövrü/İş müddəti" sahələri hələ toplanmır (bu, hər tender üçün fərqlidir) — sənəddə açıq qeyd olunur ki, əl ilə əlavə edilməlidir, uydurulmur
+
+### DOCX/PDF-də səhifə kəsimləri
+- FORMA 3, FORMA 4 (hər işçi öz səhifəsində), FORMA 7 — hər biri yeni səhifədən başlayır (əvvəllər hamısı ard-arda axırdı, oxumaq çətin idi)
