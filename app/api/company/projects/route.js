@@ -35,11 +35,14 @@ export async function POST(request) {
       registration_id: regId,
       project_name: body.project_name.trim(),
       client_name: body.client_name || null,
+      client_contact: body.client_contact || null,
       contract_value: body.contract_value || null,
       currency: body.currency || 'AZN',
       start_date: body.start_date || null,
       end_date: body.end_date || null,
       description: body.description || null,
+      completion_status: body.completion_status || 'completed',
+      supplier_role: body.supplier_role || 'Təchizatçı',
     })
     .select('*')
     .single();

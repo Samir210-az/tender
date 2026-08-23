@@ -26,7 +26,7 @@ export async function PUT(request) {
   const body = await request.json();
   const allowedFields = [
     'legal_name', 'voen', 'legal_address', 'description', 'sectors',
-    'establishment_date', 'employee_count',
+    'establishment_date', 'employee_count', 'founded_year', 'phone', 'email',
     'turnover_year1', 'turnover_year1_label', 'turnover_year2', 'turnover_year2_label',
     'writing_tone', 'standard_intro', 'standard_conclusion',
     'authorized_rep_name', 'authorized_rep_position',

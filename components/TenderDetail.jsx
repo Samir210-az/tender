@@ -396,6 +396,9 @@ export default function TenderDetail({ tenderId }) {
         {/* MALİYYƏ TƏKLİFİ (FORMA 2) */}
         <PriceSchedule tenderId={tenderId} regId={regId} generatedDocs={generatedDocs.filter((d) => d.doc_type === 'price_schedule')} onRefresh={fetchData} />
 
+        {/* FORMA 5 + FORMA 7 — deterministik, şirkət profilindən */}
+        <AdditionalForms tenderId={tenderId} regId={regId} generatedDocs={generatedDocs.filter((d) => d.doc_type === 'additional_forms')} onRefresh={fetchData} />
+
         <SubmissionPackage
           tenderId={tenderId}
           regId={regId}
@@ -406,6 +409,67 @@ export default function TenderDetail({ tenderId }) {
         />
       </div>
     </main>
+  );
+}
+
+function AdditionalForms({ tenderId, regId, generatedDocs, onRefresh }) {
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/tenders/${tenderId}/generate-additional-forms`, {
+        method: 'POST',
+        headers: { 'x-registration-id': regId },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Xəta');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+      onRefresh();
+    }
+  };
+
+  return (
+    <div className="mt-8">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">FORMA 3 + 4 + 5 + 7</h2>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {generating ? 'Hazırlanır...' : 'Hazırla'}
+        </button>
+      </div>
+      <p className="mb-2 text-xs text-neutral-500">
+        Təchizatçı haqqında + Texniki baza + Heyət + Oxşar işlər üzrə təcrübə — şirkət profilindəki mövcud məlumatlardan (AI yazmır, deterministik).
+      </p>
+      {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
+
+      {generatedDocs.length > 0 && (
+        <div className="space-y-2">
+          {generatedDocs.map((doc) => (
+            <div key={doc.id} className="rounded-lg border border-teal-500/30 bg-teal-500/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{doc.file_name}</p>
+                  <p className="text-xs text-neutral-500">{new Date(doc.created_at).toLocaleString('az-AZ')}</p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  {doc.download_url && <a href={doc.download_url} className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white">DOCX</a>}
+                  {doc.download_url_pdf && <a href={doc.download_url_pdf} className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-medium text-white">PDF</a>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

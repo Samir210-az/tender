@@ -21,7 +21,7 @@ export default function CompanyProfile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
-  const [projectForm, setProjectForm] = useState({ project_name: '', client_name: '', contract_value: '', start_date: '', end_date: '', description: '' });
+  const [projectForm, setProjectForm] = useState({ project_name: '', client_name: '', client_contact: '', contract_value: '', start_date: '', end_date: '', description: '', completion_status: 'completed', supplier_role: 'Təchizatçı' });
   const [uploadCategory, setUploadCategory] = useState('legal');
   const [uploadExpiry, setUploadExpiry] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -90,7 +90,7 @@ export default function CompanyProfile() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Xəta');
       setShowProjectForm(false);
-      setProjectForm({ project_name: '', client_name: '', contract_value: '', start_date: '', end_date: '', description: '' });
+      setProjectForm({ project_name: '', client_name: '', client_contact: '', contract_value: '', start_date: '', end_date: '', description: '', completion_status: 'completed', supplier_role: 'Təchizatçı' });
       fetchAll();
     } catch (err) {
       setError(err.message);
@@ -161,6 +161,20 @@ export default function CompanyProfile() {
             <Field label="Hüquqi ünvan">
               <input className="input w-full" value={profile.legal_address || ''} onChange={(e) => handleProfileChange('legal_address', e.target.value)} />
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Təsis ili">
+                <input type="number" className="input w-full" placeholder="2020" value={profile.founded_year || ''} onChange={(e) => handleProfileChange('founded_year', e.target.value ? parseInt(e.target.value) : null)} />
+              </Field>
+              <Field label="Telefon">
+                <input className="input w-full" placeholder="+994 XX XXX XX XX" value={profile.phone || ''} onChange={(e) => handleProfileChange('phone', e.target.value)} />
+              </Field>
+            </div>
+            <Field label="E-poçt">
+              <input type="email" className="input w-full" placeholder="info@sirket.az" value={profile.email || ''} onChange={(e) => handleProfileChange('email', e.target.value)} />
+            </Field>
+            <p className="text-[11px] text-neutral-500">
+              Bu sahələr (təsis ili, telefon, e-poçt) rəsmi FORMA 5 (Təchizatçı haqqında) sənədində istifadə olunur.
+            </p>
             <Field label="Fəaliyyət sahələri">
               <input className="input w-full" placeholder="məs. İKT, tikinti" value={profile.sectors || ''} onChange={(e) => handleProfileChange('sectors', e.target.value)} />
             </Field>
@@ -226,10 +240,22 @@ export default function CompanyProfile() {
             <form onSubmit={handleAddProject} className="mb-4 space-y-2 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
               <input className="input w-full" placeholder="Layihə adı" value={projectForm.project_name} onChange={(e) => setProjectForm((f) => ({ ...f, project_name: e.target.value }))} />
               <input className="input w-full" placeholder="Müştəri" value={projectForm.client_name} onChange={(e) => setProjectForm((f) => ({ ...f, client_name: e.target.value }))} />
+              <input className="input w-full" placeholder="Müştərinin əlaqə vasitəsi (ünvan/telefon)" value={projectForm.client_contact} onChange={(e) => setProjectForm((f) => ({ ...f, client_contact: e.target.value }))} />
               <input type="number" className="input w-full" placeholder="Müqavilə dəyəri (AZN)" value={projectForm.contract_value} onChange={(e) => setProjectForm((f) => ({ ...f, contract_value: e.target.value }))} />
               <div className="grid grid-cols-2 gap-2">
                 <input type="date" className="input w-full" value={projectForm.start_date} onChange={(e) => setProjectForm((f) => ({ ...f, start_date: e.target.value }))} />
                 <input type="date" className="input w-full" value={projectForm.end_date} onChange={(e) => setProjectForm((f) => ({ ...f, end_date: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <select className="input w-full" value={projectForm.completion_status} onChange={(e) => setProjectForm((f) => ({ ...f, completion_status: e.target.value }))}>
+                  <option value="completed">Tamamlanıb</option>
+                  <option value="ongoing">Davam edir</option>
+                </select>
+                <select className="input w-full" value={projectForm.supplier_role} onChange={(e) => setProjectForm((f) => ({ ...f, supplier_role: e.target.value }))}>
+                  <option value="Təchizatçı">Təchizatçı</option>
+                  <option value="Subpodratçı">Subpodratçı</option>
+                  <option value="Birgə fəaliyyət üzvü">Birgə fəaliyyət üzvü</option>
+                </select>
               </div>
               <textarea className="input w-full" rows={2} placeholder="Təsvir" value={projectForm.description} onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))} />
               <button type="submit" className="w-full rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white">Əlavə et</button>

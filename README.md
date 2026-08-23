@@ -108,3 +108,10 @@ npm run dev
 ### "Sənəddən yarat" + İstifadə Təlimatı
 - **Sənəddən tender yaratma** — dashboard-da "📄 Sənəddən yarat": elan olunmuş tenderin sənədini birbaşa yükləyirsən, AI tender adını/təşkilatı/son tarixi/nömrəni sənəddən çıxarıb tender-i avtomatik yaradır, fayl ilk sənəd kimi əlavə olunur. Nəticələr tender səhifəsində "✎ Redaktə et" ilə düzəldilə bilər.
 - `/telimat` — tam A-dan-Z istifadə təlimatı (şirkət profili doldurmaq, tender daxil etmək, uyğunluq yoxlaması, FORMA 1/2, ZIP paket, müsbət nəticə üçün məsləhətlər)
+
+### FORMA 3/4/5/7 — deterministik əlavə formalar (Kateqoriya A + B tamamlandı)
+- `/company`-də yeni bölmələr: Avadanlıq (FORMA 3 üçün), Heyət (FORMA 4 üçün), Analoji layihələr genişləndirildi (əlaqə, vəziyyət, rol sahələri — FORMA 7 üçün)
+- Tender detail-da "FORMA 3+4+5+7" — tək düymə, DOCX+PDF, tamamilə deterministik (AI yazmır, yalnız mövcud data rəsmi formata köçürülür)
+- `lib/formaRegistry.js` — bütün rəsmi FORMA-ların (İşlər/Mallar üçün ayrı-ayrı) tam siyahısı, hər birinin bizim tərəfdən hazırlana bilib-bilmədiyi statusu ilə
+- Tender detail-da "Tenderə tələb olunan bütün sənədlər" checklist-i — satınalma növü seçiminə görə dəyişir, **bizim heç vaxt hazırlaya bilməyəcəyimiz sənədlər** (bank zəmanəti, istehsalçı icazəsi) açıq şəkildə "Platforma HAZIRLAYA BİLMƏZ" işarəsi ilə göstərilir
+- Package (ZIP) generasiyasına FORMA 3/4/5/7 sənədi də daxil edildi

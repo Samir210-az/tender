@@ -25,7 +25,7 @@ export async function POST(request, { params }) {
     .from('generated_documents')
     .select('*')
     .eq('tender_id', tenderId)
-    .in('doc_type', ['technical_proposal', 'price_schedule'])
+    .in('doc_type', ['technical_proposal', 'price_schedule', 'additional_forms'])
     .order('created_at', { ascending: false });
 
   if (!docs || docs.length === 0) {
@@ -34,8 +34,9 @@ export async function POST(request, { params }) {
 
   const latestTechnical = docs.find((d) => d.doc_type === 'technical_proposal');
   const latestPrice = docs.find((d) => d.doc_type === 'price_schedule');
+  const latestAdditional = docs.find((d) => d.doc_type === 'additional_forms');
 
-  const filesToZip = [latestTechnical, latestPrice].filter(Boolean);
+  const filesToZip = [latestTechnical, latestPrice, latestAdditional].filter(Boolean);
   if (filesToZip.length === 0) {
     return NextResponse.json({ error: 'Sənəd tapılmadı' }, { status: 400 });
   }
