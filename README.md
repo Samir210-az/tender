@@ -115,3 +115,6 @@ npm run dev
 - `lib/formaRegistry.js` — bütün rəsmi FORMA-ların (İşlər/Mallar üçün ayrı-ayrı) tam siyahısı, hər birinin bizim tərəfdən hazırlana bilib-bilmədiyi statusu ilə
 - Tender detail-da "Tenderə tələb olunan bütün sənədlər" checklist-i — satınalma növü seçiminə görə dəyişir, **bizim heç vaxt hazırlaya bilməyəcəyimiz sənədlər** (bank zəmanəti, istehsalçı icazəsi) açıq şəkildə "Platforma HAZIRLAYA BİLMƏZ" işarəsi ilə göstərilir
 - Package (ZIP) generasiyasına FORMA 3/4/5/7 sənədi də daxil edildi
+
+### DÜZƏLİŞ: procurement_type constraint uyğunsuzluğu
+- Kəşf edildi: `tenders.procurement_type` sütunu əvvəlki sessiyada fərqli dəyərlərlə (`isler`/`mallar`/`xidmetler`) yaradılmışdı, kod isə (`works`/`goods`/`services`) yazırdı — "Satınalma növü" seçimi HƏMİŞƏ uğursuz olardı (constraint pozuntusu). DB constraint kodla uyğunlaşdırıldı.
